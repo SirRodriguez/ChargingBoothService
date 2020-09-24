@@ -22,6 +22,7 @@ def create_app(config_class=Config):
 	mail.init_app(app)
 
 	from CB_service.main.routes import main
+
 	from CB_service.DELETE.routes import DELETE
 	from CB_service.GET.routes import GET
 	from CB_service.PATCH.routes import PATCH
@@ -29,6 +30,7 @@ def create_app(config_class=Config):
 	from CB_service.PUT.routes import PUT
 
 	app.register_blueprint(main)
+	
 	app.register_blueprint(DELETE)
 	app.register_blueprint(GET)
 	app.register_blueprint(PATCH)
