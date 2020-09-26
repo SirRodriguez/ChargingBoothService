@@ -1,4 +1,5 @@
 from flask import current_app
+from datetime import datetime
 from CB_service import db
 
 
@@ -12,8 +13,10 @@ class Device(db.Model):
 	id = db.Column(db.Integer, primary_key=True)
 	id_number = db.Column(db.String(50), unique=True, nullable=False) # Comunication for the device
 
-	sessions = db.relationship('Session', backref='location', lazy=True)
-	settings = db.relationship('Settings', backref='location', lazy=True)
+	settings_id = db.Column(db.Integer, db.ForeignKey("settings.id"))
+
+	sessions = db.relationship('Session', backref='host', lazy=True)
+	settings = db.relationship('Settings', backref='host', lazy=True, foreign_keys=[settings_id])
 
 
 class Session(db.Model):
@@ -27,7 +30,7 @@ class Session(db.Model):
 	increment_size = db.Column(db.Integer) #Seconds
 	increments = db.Column(db.Integer)
 
-	device_id = db.Column(db.Integer, db.ForeinKey('device.id'), nullable=False)
+	device_id = db.Column(db.Integer, db.ForeignKey('device.id'), nullable=False)
 
 
 class Settings(db.Model):
@@ -40,10 +43,10 @@ class Settings(db.Model):
 	aspect_ratio_width = db.Column(db.Float) # Screen Ratio Width
 	aspect_ratio_height = db.Column(db.Float) # Screen Ratio Height
 
-	device_id = db.Column(db.Integer, db.ForeinKey('device.id') nullable=False)
+	device_id = db.Column(db.Integer, db.ForeignKey('device.id'), nullable=False)
 
 # Class to count how many devices are using the image.
 class Images(db.Model):
-	id = db.column(db.Integer, primary_key=True)
-	image_name = db.Column(db.string(50), nullable=False)
+	id = db.Column(db.Integer, primary_key=True)
+	image_name = db.Column(db.String(50), nullable=False)
 	count = db.Column(db.Integer, nullable=False, default=0)
