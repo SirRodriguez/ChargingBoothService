@@ -46,21 +46,51 @@ def all_devices():
 	if request.method == 'GET':
 		all_devices = Device.query.order_by(Device.id.asc())
 
-		list_dev_num = []
+		# list_dev_num = []
 		list_id = []
+		list_location = []
 		count = 0
 		for devi in all_devices:
-			list_dev_num.append(devi.id_number)
+			# list_dev_num.append(devi.id_number)
 			list_id.append(devi.id)
+			if(devi.settings != None):
+				list_location.append(devi.settings.location)
+			else:
+				list_location.append("No Settings")
 			count += 1
 
-		payload["device_num"] = list_dev_num
+		# payload["device_num"] = list_dev_num
 		payload["device_id"] = list_id
+		payload["location"] = list_location
 		payload["count"] = count
 
 		resp = jsonify(payload)
 		resp.status_code = 200
 		return resp
+	else:
+		resp = jsonify(payload)
+		resp.status_code = 405
+		return resp
+
+@device_module.route("/device_module/location/<int:id>")
+def device_location(id):
+	payload = {}
+	if request.method == 'GET':
+		devi = Device.query.get(id)
+
+		if devi != None:
+			if(devi.settings != None):
+				payload["location"] = devi.settings.location
+			else:
+				payload["location"] = "No Settings"
+
+			resp = jsonify(payload)
+			resp.status_code = 200
+			return resp
+		else:
+			resp = jsonify(payload)
+			resp.status_code = 400
+			return resp
 	else:
 		resp = jsonify(payload)
 		resp.status_code = 405

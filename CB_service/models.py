@@ -17,7 +17,7 @@ class Device(db.Model):
 
 	sessions = db.relationship('Session', backref='host', lazy=True)
 	# settings = db.relationship('Settings', backref='host', lazy=True, foreign_keys=[settings_id])
-	settings = db.relationship('Settings', backref='host', lazy=True)
+	settings = db.relationship('Settings', backref='host', lazy=True, uselist=False)
 
 
 class Session(db.Model):
