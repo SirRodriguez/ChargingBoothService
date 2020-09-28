@@ -123,3 +123,83 @@ def remove_device(id):
 		resp = jsonify(payload)
 		resp.status_code = 405
 		return resp
+
+@device_module.route("/device_module/settings/<int:id>")
+def device_settings(id):
+	payload = {}
+
+	if request.method == 'GET':
+		devi = Device.query.get(id)
+
+		if devi != None:
+			if(devi.settings != None):
+				payload["toggle_pay"] = devi.settings.toggle_pay
+				payload["price"] = devi.settings.price
+				payload["charge_time"] = devi.settings.charge_time
+				payload["time_offset"] = devi.settings.time_offset
+				payload["location"] = devi.settings.location
+				payload["aspect_ratio_width"] = devi.settings.aspect_ratio_width
+				payload["aspect_ratio_height"] = devi.settings.aspect_ratio_height
+
+				resp = jsonify(payload)
+				resp.status_code = 200
+				return resp
+
+			else:
+				resp = jsonify(payload)
+				resp.status_code = 500
+				return resp
+
+		else:
+			resp = jsonify(payload)
+			resp.status_code = 400
+			return resp
+
+	else:
+		resp = jsonify(payload)
+		resp.status_code = 405
+		return resp
+
+@device_module.route("/device_module/settings/update/<int:id>", methods=["PUT"])
+def update_settings(id):
+	payload = {}
+
+	if request.method == 'PUT':
+		devi = Device.query.get(id)
+		if devi != None:
+
+			# Check if aspect ration is different so that it can resize all images
+			# resize = False
+			# if Settings.query.first().aspect_ratio_width != float(form.aspect_ratio.data.split(":")[0]) and \
+			# 	Settings.query.first().aspect_ratio_height != float(form.aspect_ratio.data.split(":")[1]):
+			# 	resize = True
+
+			devi.settings.toggle_pay = request.json["toggle_pay"]
+			devi.settings.price = request.json["price"]
+			devi.settings.charge_time = request.json["charge_time"]
+			devi.settings.time_offset = request.json["time_offset"]
+			devi.settings.location = request.json["location"]
+			devi.settings.aspect_ratio_width = request.json["aspect_ratio_width"]
+			devi.settings.aspect_ratio_height = request.json["aspect_ratio_height"]
+
+			# if resize:
+			# 	pic_files = PFI()
+			# 	pic_files.resize_all(Settings.query.first().aspect_ratio_width, Settings.query.first().aspect_ratio_height)
+
+			db.session.commit()
+
+			resp = jsonify(payload)
+			resp.status_code = 200
+			return resp
+		else:
+			resp = jsonify(payload)
+			resp.status_code = 400
+			return resp
+
+		resp = jsonify(payload)
+		resp.status_code = 200
+		return resp
+	else:
+		resp = jsonify(payload)
+		resp.status_code = 405
+		return resp
