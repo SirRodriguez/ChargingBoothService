@@ -100,13 +100,20 @@ def device_location(id):
 @device_module.route("/device_module/remove_device/<int:id>", methods=['DELETE'])
 def remove_device(id):
 	payload = {}
+	print(id)
 	if request.method == 'DELETE':
 		devi = Device.query.get(id)
+
+		# print(devi.id)
+		# print(devi.id_number)
 
 		if devi != None:
 			payload["deleted_id"] = devi.id
 			payload["deleted_num"] = devi.id_number
 
+			# Settings must be seleted along with it
+			# Later all the session that go along with it
+			db.session.delete(devi.settings)
 			db.session.delete(devi)
 			db.session.commit()
 
@@ -195,10 +202,6 @@ def update_settings(id):
 			resp = jsonify(payload)
 			resp.status_code = 400
 			return resp
-
-		resp = jsonify(payload)
-		resp.status_code = 200
-		return resp
 	else:
 		resp = jsonify(payload)
 		resp.status_code = 405
