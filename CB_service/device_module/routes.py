@@ -1,4 +1,5 @@
-from flask import Blueprint, request, json, Response, jsonify
+from flask import Blueprint, request, json, Response, jsonify, current_app
+import os
 import secrets
 from CB_service import db
 from CB_service.models import User, Device, Settings
@@ -100,7 +101,7 @@ def device_location(id):
 @device_module.route("/device_module/remove_device/<int:id>", methods=['DELETE'])
 def remove_device(id):
 	payload = {}
-	print(id)
+	# print(id)
 	if request.method == 'DELETE':
 		devi = Device.query.get(id)
 
@@ -206,3 +207,27 @@ def update_settings(id):
 		resp = jsonify(payload)
 		resp.status_code = 405
 		return resp
+
+@device_module.route("/device_module/images/upload/<int:id>", methods=['POST'])
+def upload_images(id):
+	payload = {}
+
+	print(request.files)
+
+	files = request.files.to_dict(flat=False)
+	# for i, file in enumerate(files):
+	# 	print(i, file)
+
+	for image_file in files['image']:
+		# print(image_file.filename)
+		# Save the image file in the id directory
+		# Check if directory exists
+		# TODO:
+		# Make one for the device id number
+		# Then save the image file in that directory.
+		file_path = os.path.join(current_app.root_path, 'static', 'picture_files', str(id), image_file.filename)
+		image_file.save(file_path)
+
+	resp = jsonify(payload)
+	resp.status_code = 200
+	return resp
