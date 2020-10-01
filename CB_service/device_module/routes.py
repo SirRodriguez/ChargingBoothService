@@ -1,5 +1,7 @@
-from flask import Blueprint, request, json, Response, jsonify, current_app
+from flask import Blueprint, request, json, Response, jsonify, current_app, send_from_directory
 import os
+from os import listdir
+from os.path import isfile, join
 import secrets
 from CB_service import db
 from CB_service.models import User, Device, Settings
@@ -97,17 +99,121 @@ def device_location(id):
 		resp.status_code = 405
 		return resp
 
+@device_module.route("/device_module/location_image_count/<int:id>")
+def device_location_img_count(id):
+	payload = {}
+	if request.method == 'GET':
+		devi = Device.query.get(id)
+
+		if devi != None:
+			# path = os.path.join(current_app.root_path, 'static', 'picture_files', str(id))
+			# return send_from_directory(directory=path, filename='black_hole.jpg')
+			# Put the location from settings
+			if(devi.settings != None):
+				payload["location"] = devi.settings.location
+			else:
+				payload["location"] = "No Settings"
+
+			# # Put the images here
+			path = os.path.join(current_app.root_path, 'static', 'picture_files', str(id))
+			count = 0
+			if os.path.isdir(path): # If no directory, send nothing
+				all_files = [f for f in listdir(path) if isfile(join(path, f))]
+				for file in all_files:
+					count += 1
+
+			payload["image_count"] = count
+
+			resp = jsonify(payload)
+			resp.status_code = 200
+			return resp
+		else:
+			resp = jsonify(payload)
+			resp.status_code = 400
+			return resp
+	else:
+		resp = jsonify(payload)
+		resp.status_code = 405
+		return resp
+
+@device_module.route("/device_module/grab_image/<int:id>/<int:img_num>")
+def grab_image(id, img_num):
+	payload = {}
+	if request.method == 'GET':
+		path = os.path.join(current_app.root_path, 'static', 'picture_files', str(id))
+
+		# Find extention
+		all_files = [f for f in listdir(path) if isfile(join(path, f))]
+		extention = ""
+		for file in all_files:
+			f_name, f_ext = os.path.splitext(file)
+			if f_name == str(img_num):
+				extention = f_ext
+
+
+		if os.path.isdir(path):
+			return send_from_directory(directory=path, filename=str(img_num) + extention)
+		else:
+			resp = jsonify(payload)
+			resp.status_code = 404
+			return resp
+	else:
+		resp = jsonify(payload)
+		resp.status_code = 405
+		return resp
+
+@device_module.route("/device_module/remove_images/<int:id>/<string:removals>", methods=['DELETE'])
+def remove_images(id, removals):
+	payload = {}
+
+	if request.method == 'DELETE':
+		path = os.path.join(current_app.root_path, 'static', 'picture_files', str(id))
+		if os.path.isdir(path):
+
+			# Parse removals
+			rem_list = removals.split(",")
+			# fix index and put in a set
+			rem_set = set()
+			for index, value in enumerate(rem_list):
+				rem_set.add(str(int(rem_list[index])-1))
+
+			# Remove the image files in there
+			all_files = [f for f in listdir(path) if isfile(join(path, f))]
+			for file in all_files:
+				f_name, f_ext = os.path.splitext(file)
+				if f_name in rem_set:
+					file_path = os.path.join(path, file)
+					os.remove(file_path)
+
+			# readjust the file names
+			all_files = [f for f in listdir(path) if isfile(join(path, f))]
+			count = 0
+			for file in all_files:
+				f_name, f_ext = os.path.splitext(file)
+				src_path = os.path.join(path, file)
+				dst_path = os.path.join(path, str(count) + f_ext)
+				os.rename(src_path, dst_path)
+				count += 1
+
+			resp = jsonify(payload)
+			resp.status_code = 204
+			return resp
+		else:
+			resp = jsonify(payload)
+			resp.status_code = 400
+			return resp
+	else:
+		resp = jsonify(payload)
+		resp.status_code = 405
+		return resp
+
 
 @device_module.route("/device_module/remove_device/<int:id>", methods=['DELETE'])
 def remove_device(id):
 	payload = {}
-	# print(id)
+	
 	if request.method == 'DELETE':
 		devi = Device.query.get(id)
-
-		# print(devi.id)
-		# print(devi.id_number)
-
 		if devi != None:
 			payload["deleted_id"] = devi.id
 			payload["deleted_num"] = devi.id_number
@@ -212,21 +318,24 @@ def update_settings(id):
 def upload_images(id):
 	payload = {}
 
-	print(request.files)
+	# Check if directory exists for device images
+	path = os.path.join(current_app.root_path, 'static', 'picture_files', str(id))
+	if not os.path.isdir(path):
+		os.mkdir(path)
 
+	# Count how many images are in the directory
+	all_files = [f for f in listdir(path) if isfile(join(path, f))]
+	count = 0
+	for file in all_files:
+		count += 1
+
+	# Save the incomming images
 	files = request.files.to_dict(flat=False)
-	# for i, file in enumerate(files):
-	# 	print(i, file)
-
 	for image_file in files['image']:
-		# print(image_file.filename)
-		# Save the image file in the id directory
-		# Check if directory exists
-		# TODO:
-		# Make one for the device id number
-		# Then save the image file in that directory.
-		file_path = os.path.join(current_app.root_path, 'static', 'picture_files', str(id), image_file.filename)
+		_, f_ext = os.path.splitext(image_file.filename)
+		file_path = os.path.join(path, str(count) + f_ext)
 		image_file.save(file_path)
+		count += 1
 
 	resp = jsonify(payload)
 	resp.status_code = 200
