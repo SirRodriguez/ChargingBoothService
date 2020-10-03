@@ -43,6 +43,25 @@ def register():
 		resp.status_code = 405
 		return resp
 
+@device_module.route("/device_module/is_registered/<string:id_number>")
+def is_registered(id_number):
+	payload = {}
+	if request.method == 'GET':
+		devi = Device.query.filter_by(id_number=id_number).first()
+		if devi == None:
+			payload["registered"] = False
+		else:
+			payload["registered"] = True
+
+		resp = jsonify(payload)
+		resp.status_code = 200
+		return resp
+
+	else:
+		resp = jsonify(payload)
+		resp.status_code = 405
+		return resp
+
 @device_module.route("/device_module/get_all")
 def all_devices():
 	payload = {}
