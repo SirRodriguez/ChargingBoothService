@@ -24,22 +24,13 @@ def create_app(config_class=Config):
 	from CB_service.main.routes import main
 
 	from CB_service.device_module.routes import device_module
-
-	from CB_service.DELETE.routes import DELETE
-	from CB_service.GET.routes import GET
-	from CB_service.PATCH.routes import PATCH
-	from CB_service.POST.routes import POST
-	from CB_service.PUT.routes import PUT
+	from CB_service.device.routes import device
+	from CB_service.site.routes import site
 
 	app.register_blueprint(main)
 
 	app.register_blueprint(device_module)
-	
-	app.register_blueprint(DELETE)
-	app.register_blueprint(GET)
-	app.register_blueprint(PATCH)
-	app.register_blueprint(POST)
-	app.register_blueprint(PUT)
-
+	app.register_blueprint(device)
+	app.register_blueprint(site)
 
 	return app
