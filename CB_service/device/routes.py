@@ -1,10 +1,12 @@
 from flask import Blueprint, request, json, Response, jsonify, current_app, send_from_directory
+import datetime
+# from datetime import datetime
 import os
 from os import listdir
 from os.path import isfile, join
 import secrets
 from CB_service import db
-from CB_service.models import User, Device, Settings
+from CB_service.models import User, Device, Settings, Session
 
 device = Blueprint('device', __name__)
 
@@ -104,6 +106,49 @@ def update_settings(id_number):
 			devi.settings.aspect_ratio_width = request.json["aspect_ratio_width"]
 			devi.settings.aspect_ratio_height = request.json["aspect_ratio_height"]
 
+			db.session.commit()
+
+			resp = jsonify(payload)
+			resp.status_code = 200
+			return resp
+		else:
+			resp = jsonify(payload)
+			resp.status_code = 400
+			return resp
+	else:
+		resp = jsonify(payload)
+		resp.status_code = 405
+		return resp
+
+
+@device.route("/device/add_session/<string:id_number>", methods=['PUT'])
+def add_session(id_number):
+	payload = {}
+	if request.method == 'PUT':
+		devi = Device.query.filter_by(id_number=id_number).first()
+		if devi != None:
+			date_initiated=datetime.datetime(
+				year=request.json["date_initiated_year"],
+				month=request.json["date_initiated_month"],
+				day=request.json["date_initiated_day"], 
+				hour=request.json["date_initiated_hour"], 
+				minute=request.json["date_initiated_minute"],
+				second=request.json["date_initiated_second"]
+				)
+
+			session = Session(
+				duration=request.json["duration"],
+				power_used=request.json["power_used"],
+				amount_paid=request.json["amount_paid"],
+				date_initiated=date_initiated,
+				location=request.json["location"],
+				port=request.json["port"],
+				increment_size=request.json["increment_size"],
+				increments=request.json["increments"],
+				host=devi
+				)
+
+			db.session.add(session)
 			db.session.commit()
 
 			resp = jsonify(payload)
