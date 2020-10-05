@@ -162,3 +162,77 @@ def add_session(id_number):
 		resp = jsonify(payload)
 		resp.status_code = 405
 		return resp
+
+# payload_send["date_initiated_year"] = self.local_sessions[index].date_initiated.year
+# 					payload_send["date_initiated_month"] = self.local_sessions[index].date_initiated.month
+# 					payload_send["date_initiated_day"] = self.local_sessions[index].date_initiated.day
+# 					payload_send["date_initiated_hour"] = self.local_sessions[index].date_initiated.hour
+# 					payload_send["date_initiated_minute"] = self.local_sessions[index].date_initiated.minute
+# 					payload_send["date_initiated_second"] = self.local_sessions[index].date_initiated.second
+
+
+@device.route("/device/sessions/<string:id_number>/<int:page>")
+def get_sessions(id_number, page):
+	payload = {}
+	if request.method == 'GET':
+		devi = Device.query.filter_by(id_number=id_number).first()
+		if devi != None:
+			# sessions = Session.query.order_by(Session.date_initiated.desc()).paginate(page=page, per_page=10)
+
+			sessions = Session.query.order_by(Session.date_initiated.desc()).paginate(page=page, per_page=10)
+
+			payload["sessions"] = []
+			payload["iter_pages"] = []
+
+			for sess in sessions.items:
+				sess_items = {}
+				sess_items["id"] = sess.id
+
+				sess_items["duration"] = sess.duration
+				sess_items["power_used"] = sess.power_used
+				sess_items["amount_paid"] = sess.amount_paid
+
+				sess_items["date_initiated_year"] = sess.date_initiated.year
+				sess_items["date_initiated_month"] = sess.date_initiated.month
+				sess_items["date_initiated_day"] = sess.date_initiated.day
+				sess_items["date_initiated_hour"] = sess.date_initiated.hour
+				sess_items["date_initiated_minute"] = sess.date_initiated.minute
+				sess_items["date_initiated_second"] = sess.date_initiated.second
+
+				sess_items["location"] = sess.location
+				sess_items["port"] = sess.port
+				sess_items["increment_size"] = sess.increment_size
+				sess_items["increments"] = sess.increments
+
+				payload["sessions"].append(sess_items)
+
+
+			for page_num in sessions.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=2):
+				if page_num:
+					payload["iter_pages"].append(page_num)
+				else:
+					payload["iter_pages"].append(0)
+
+			# {% for page_num in sessions.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=2) %}
+		 #      {% if page_num %}
+		 #        {% if sessions.page == page_num %}
+		 #          <a class="btn btn-info mb-4" href="{{ url_for('system_admin.view_data', page=page_num) }}">{{ page_num }}</a>
+		 #        {% else %}
+		 #          <a class="btn btn-outline-info mb-4" href="{{ url_for('system_admin.view_data', page=page_num) }}">{{ page_num }}</a>
+		 #        {% endif %}
+		 #      {% else %}
+		 #        ...
+		 #      {% endif %}
+		 #    {% endfor %}
+
+			resp = jsonify(payload)
+			resp.status_code = 200
+			return resp
+		else:
+			resp = jsonify(payload)
+			resp.status_code = 400
+			return resp
+	else:
+		resp = jsonify(payload)
+		resp.status_code = 405
+		return resp
