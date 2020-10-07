@@ -227,8 +227,6 @@ def get_all_sessions(id_number):
 				.order_by(Session.date_initiated.desc())\
 				.all()
 
-			print(sessions)
-
 			payload["sessions"] = []
 
 			for sess in sessions:
