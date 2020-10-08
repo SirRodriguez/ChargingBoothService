@@ -262,3 +262,68 @@ def get_all_sessions(id_number):
 		resp = jsonify(payload)
 		resp.status_code = 405
 		return resp
+
+@device.route("/device/img_count/<string:id_number>")
+def get_image_count(id_number):
+	payload = {}
+	if request.method == 'GET':
+		devi = Device.query.filter_by(id_number=id_number).first()
+		if devi != None:
+
+			id = devi.id
+			path = os.path.join(current_app.root_path, 'static', 'picture_files', str(id))
+			count = 0
+			if os.path.isdir(path): # If no directory, send 0
+				all_files = [f for f in listdir(path) if isfile(join(path, f))]
+				for file in all_files:
+					count += 1
+
+			payload["image_count"] = count
+
+			resp = jsonify(payload)
+			resp.status_code = 200
+			return resp
+		else:
+			resp = jsonify(payload)
+			resp.status_code = 400
+			return resp
+	else:
+		resp = jsonify(payload)
+		resp.status_code = 405
+		return resp
+
+@device.route("/device/grab_image/<string:id_number>/<int:img_num>/<random_hex>")
+def grab_image(id_number, img_num, random_hex):
+	payload = {}
+	if request.method == 'GET':
+
+		devi = Device.query.filter_by(id_number=id_number).first()
+
+		if devi != None:
+			id = devi.id
+
+			path = os.path.join(current_app.root_path, 'static', 'picture_files', str(id))
+
+			# Find extention
+			all_files = [f for f in listdir(path) if isfile(join(path, f))]
+			extention = ""
+			for file in all_files:
+				f_name, f_ext = os.path.splitext(file)
+				if f_name == str(img_num):
+					extention = f_ext
+
+
+			if os.path.isdir(path):
+				return send_from_directory(directory=path, filename=str(img_num) + extention)
+			else:
+				resp = jsonify(payload)
+				resp.status_code = 404
+				return resp
+		else:
+			resp = jsonify(payload)
+			resp.status_code = 400
+			return resp
+	else:
+		resp = jsonify(payload)
+		resp.status_code = 405
+		return resp

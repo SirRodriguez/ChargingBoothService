@@ -74,15 +74,13 @@ def device_location_img_count(id):
 		devi = Device.query.get(id)
 
 		if devi != None:
-			# path = os.path.join(current_app.root_path, 'static', 'picture_files', str(id))
-			# return send_from_directory(directory=path, filename='black_hole.jpg')
 			# Put the location from settings
 			if(devi.settings != None):
 				payload["location"] = devi.settings.location
 			else:
 				payload["location"] = "No Settings"
 
-			# # Put the images here
+			# # Grab image count
 			path = os.path.join(current_app.root_path, 'static', 'picture_files', str(id))
 			count = 0
 			if os.path.isdir(path): # If no directory, send nothing
