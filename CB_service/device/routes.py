@@ -327,3 +327,104 @@ def grab_image(id_number, img_num, random_hex):
 		resp = jsonify(payload)
 		resp.status_code = 405
 		return resp
+
+@device.route("/device/images/upload/<string:id_number>", methods=['POST'])
+def upload_image(id_number):
+	payload = {}
+
+	if request.method == 'POST':
+
+		devi = Device.query.filter_by(id_number=id_number).first()
+		if devi != None:
+
+			id = devi.id
+
+			# Check if directory exists for device images
+			path = os.path.join(current_app.root_path, 'static', 'picture_files', str(id))
+			if not os.path.isdir(path):
+				os.mkdir(path)
+
+			# Count how many images are in the directory
+			all_files = [f for f in listdir(path) if isfile(join(path, f))]
+			count = 0
+			for file in all_files:
+				count += 1
+
+			# Save the incomming images
+			files = request.files.to_dict(flat=False)
+			for image_file in files['image']:
+				print(image_file.filename)
+				_, f_ext = os.path.splitext(image_file.filename)
+				file_path = os.path.join(path, str(count) + f_ext)
+				image_file.save(file_path)
+				count += 1
+
+			resp = jsonify(payload)
+			resp.status_code = 200
+			return resp
+
+		else:
+			resp = jsonify(payload)
+			resp.status_code = 400
+			return resp
+
+	else:
+		resp = jsonify(payload)
+		resp.status_code = 405
+		return resp
+
+@device.route("/device/remove_images/<string:id_number>/<string:removals>", methods=['DELETE'])
+def remove_images(id_number, removals):
+	payload = {}
+
+	if request.method == 'DELETE':
+		devi = Device.query.filter_by(id_number=id_number).first()
+
+		if devi != None:
+			id = devi.id
+
+			path = os.path.join(current_app.root_path, 'static', 'picture_files', str(id))
+			if os.path.isdir(path):
+
+				# Parse removals
+				rem_list = removals.split(",")
+				# fix index and put in a set
+				rem_set = set()
+				for index, value in enumerate(rem_list):
+					rem_set.add(str(int(rem_list[index])-1))
+
+				# Remove the image files in there
+				all_files = [f for f in listdir(path) if isfile(join(path, f))]
+				for file in all_files:
+					f_name, f_ext = os.path.splitext(file)
+					if f_name in rem_set:
+						file_path = os.path.join(path, file)
+						os.remove(file_path)
+
+				# readjust the file names
+				all_files = [f for f in listdir(path) if isfile(join(path, f))]
+				count = 0
+				for file in all_files:
+					f_name, f_ext = os.path.splitext(file)
+					src_path = os.path.join(path, file)
+					dst_path = os.path.join(path, str(count) + f_ext)
+					os.rename(src_path, dst_path)
+					count += 1
+
+				resp = jsonify(payload)
+				resp.status_code = 204
+				return resp
+			else:
+				resp = jsonify(payload)
+				resp.status_code = 400
+				return resp
+
+		else:
+			resp = jsonify(payload)
+			resp.status_code = 400
+			return resp
+
+	else:
+		resp = jsonify(payload)
+		resp.status_code = 405
+		return resp

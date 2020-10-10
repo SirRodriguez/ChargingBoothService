@@ -103,8 +103,8 @@ def device_location_img_count(id):
 		return resp
 
 # Site
-@site.route("/site/grab_image/<int:id>/<int:img_num>")
-def grab_image(id, img_num):
+@site.route("/site/grab_image/<int:id>/<int:img_num>/<random_hex>")
+def grab_image(id, img_num, random_hex):
 	payload = {}
 	if request.method == 'GET':
 		path = os.path.join(current_app.root_path, 'static', 'picture_files', str(id))
