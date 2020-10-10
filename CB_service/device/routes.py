@@ -7,7 +7,7 @@ from os.path import isfile, join
 import secrets
 from CB_service import db
 from CB_service.models import User, Device, Settings, Session
-from CB_service.device.utils import resize_image
+from CB_service.device.utils import resize_image, resize_all_images
 
 device = Blueprint('device', __name__)
 
@@ -99,6 +99,13 @@ def update_settings(id_number):
 	if request.method == 'PUT':
 		devi = Device.query.filter_by(id_number=id_number).first()
 		if devi != None:
+
+			# Check if aspect ration is different so that it can resize all images
+			resize = False
+			if devi.settings.aspect_ratio_width != float(request.json["aspect_ratio_width"]) or \
+				devi.settings.aspect_ratio_height != float(request.json["aspect_ratio_height"]):
+				resize = True
+
 			devi.settings.toggle_pay = request.json["toggle_pay"]
 			devi.settings.price = request.json["price"]
 			devi.settings.charge_time = request.json["charge_time"]
@@ -106,6 +113,9 @@ def update_settings(id_number):
 			devi.settings.location = request.json["location"]
 			devi.settings.aspect_ratio_width = request.json["aspect_ratio_width"]
 			devi.settings.aspect_ratio_height = request.json["aspect_ratio_height"]
+
+			if resize:
+				resize_all_images(devi.settings.aspect_ratio_width, devi.settings.aspect_ratio_height, devi.id)
 
 			db.session.commit()
 
