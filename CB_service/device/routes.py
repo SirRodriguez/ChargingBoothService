@@ -7,6 +7,7 @@ from os.path import isfile, join
 import secrets
 from CB_service import db
 from CB_service.models import User, Device, Settings, Session
+from CB_service.device.utils import resize_image
 
 device = Blueprint('device', __name__)
 
@@ -338,11 +339,19 @@ def upload_image(id_number):
 		if devi != None:
 
 			id = devi.id
+			# From settings get ration width and height
+			ratio_width = devi.settings.aspect_ratio_width
+			ratio_height = devi.settings.aspect_ratio_height
 
 			# Check if directory exists for device images
 			path = os.path.join(current_app.root_path, 'static', 'picture_files', str(id))
 			if not os.path.isdir(path):
 				os.mkdir(path)
+
+			# Check if resized image directory exists
+			re_path = os.path.join(current_app.root_path, 'static', 'picture_files', str(id), 'resized')
+			if not os.path.isdir(re_path):
+				os.mkdir(re_path)
 
 			# Count how many images are in the directory
 			all_files = [f for f in listdir(path) if isfile(join(path, f))]
@@ -357,6 +366,15 @@ def upload_image(id_number):
 				_, f_ext = os.path.splitext(image_file.filename)
 				file_path = os.path.join(path, str(count) + f_ext)
 				image_file.save(file_path)
+
+				# Get a resized image
+				background_color = 'black'
+				re_img = resize_image(image_file, background_color, ratio_width, ratio_height)
+
+
+				resized_file_path = os.path.join(current_app.root_path, 'static', 'picture_files', str(id), 'resized', str(count) + f_ext)
+				re_img.save(resized_file_path)
+
 				count += 1
 
 			resp = jsonify(payload)
@@ -384,6 +402,7 @@ def remove_images(id_number, removals):
 			id = devi.id
 
 			path = os.path.join(current_app.root_path, 'static', 'picture_files', str(id))
+			re_path = os.path.join(current_app.root_path, 'static', 'picture_files', str(id), 'resized')
 			if os.path.isdir(path):
 
 				# Parse removals
@@ -399,15 +418,23 @@ def remove_images(id_number, removals):
 					f_name, f_ext = os.path.splitext(file)
 					if f_name in rem_set:
 						file_path = os.path.join(path, file)
+						re_file_path = os.path.join(re_path, file) # Resized names are the same as the original
 						os.remove(file_path)
+						os.remove(re_file_path)
 
 				# readjust the file names
 				all_files = [f for f in listdir(path) if isfile(join(path, f))]
 				count = 0
 				for file in all_files:
 					f_name, f_ext = os.path.splitext(file)
+					# Original
 					src_path = os.path.join(path, file)
 					dst_path = os.path.join(path, str(count) + f_ext)
+					os.rename(src_path, dst_path)
+
+					# Resized
+					src_path = os.path.join(re_path, file)
+					dst_path = os.path.join(re_path, str(count) + f_ext)
 					os.rename(src_path, dst_path)
 					count += 1
 

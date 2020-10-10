@@ -312,6 +312,11 @@ def upload_images(id):
 			if not os.path.isdir(path):
 				os.mkdir(path)
 
+			# Check if resized image directory exists
+			re_path = os.path.join(current_app.root_path, 'static', 'picture_files', str(id), 'resized')
+			if not os.path.isdir(re_path):
+				os.mkdir(re_path)
+
 			# Count how many images are in the directory
 			all_files = [f for f in listdir(path) if isfile(join(path, f))]
 			count = 0
@@ -331,9 +336,9 @@ def upload_images(id):
 				re_img = resize_image(image_file, background_color, ratio_width, ratio_height)
 
 				# Check if resized image directory exists
-				re_path = os.path.join(current_app.root_path, 'static', 'picture_files', str(id), 'resized')
-				if not os.path.isdir(re_path):
-					os.mkdir(re_path)
+				# re_path = os.path.join(current_app.root_path, 'static', 'picture_files', str(id), 'resized')
+				# if not os.path.isdir(re_path):
+				# 	os.mkdir(re_path)
 
 				# Save the resized image
 				resized_file_path = os.path.join(current_app.root_path, 'static', 'picture_files', str(id), 'resized', str(count) + f_ext)
