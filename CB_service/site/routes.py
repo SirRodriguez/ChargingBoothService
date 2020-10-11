@@ -198,6 +198,7 @@ def remove_device(id):
 
 			# Settings must be seleted along with it
 			# Later all the session that go along with it
+			# And also all the image files that go along with it
 			db.session.delete(devi.settings)
 			db.session.delete(devi)
 			db.session.commit()

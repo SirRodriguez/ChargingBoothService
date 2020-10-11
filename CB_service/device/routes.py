@@ -323,13 +323,50 @@ def grab_image(id_number, img_num, random_hex):
 				if f_name == str(img_num):
 					extention = f_ext
 
-
+			# Send the file
 			if os.path.isdir(path):
 				return send_from_directory(directory=path, filename=str(img_num) + extention)
 			else:
 				resp = jsonify(payload)
 				resp.status_code = 404
 				return resp
+		else:
+			resp = jsonify(payload)
+			resp.status_code = 400
+			return resp
+	else:
+		resp = jsonify(payload)
+		resp.status_code = 405
+		return resp
+
+@device.route("/device/grab_re_image/<string:id_number>/<int:img_num>/<random_hex>")
+def grab_resized_image(id_number, img_num, random_hex):
+	payload = {}
+	if request.method == 'GET':
+
+		devi = Device.query.filter_by(id_number=id_number).first()
+
+		if devi != None:
+			id = devi.id
+
+			path = os.path.join(current_app.root_path, 'static', 'picture_files', str(id), 'resized')
+
+			# Find extention
+			all_files = [f for f in listdir(path) if isfile(join(path, f))]
+			extention = ""
+			for file in all_files:
+				f_name, f_ext = os.path.splitext(file)
+				if f_name == str(img_num):
+					extention = f_ext
+
+			# Send the file
+			if os.path.isdir(path):
+				return send_from_directory(directory=path, filename=str(img_num) + extention)
+			else:
+				resp = jsonify(payload)
+				resp.status_code = 404
+				return resp
+
 		else:
 			resp = jsonify(payload)
 			resp.status_code = 400
