@@ -217,82 +217,82 @@ def remove_device(id):
 		resp.status_code = 405
 		return resp
 
-# Site
-@site.route("/site/settings/<int:id>")
-def device_settings(id):
-	payload = {}
+# # Site
+# @site.route("/site/settings/<int:id>")
+# def device_settings(id):
+# 	payload = {}
 
-	if request.method == 'GET':
-		devi = Device.query.get(id)
+# 	if request.method == 'GET':
+# 		devi = Device.query.get(id)
 
-		if devi != None:
-			if(devi.settings != None):
-				payload["toggle_pay"] = devi.settings.toggle_pay
-				payload["price"] = devi.settings.price
-				payload["charge_time"] = devi.settings.charge_time
-				payload["time_offset"] = devi.settings.time_offset
-				payload["location"] = devi.settings.location
-				payload["aspect_ratio_width"] = devi.settings.aspect_ratio_width
-				payload["aspect_ratio_height"] = devi.settings.aspect_ratio_height
+# 		if devi != None:
+# 			if(devi.settings != None):
+# 				payload["toggle_pay"] = devi.settings.toggle_pay
+# 				payload["price"] = devi.settings.price
+# 				payload["charge_time"] = devi.settings.charge_time
+# 				payload["time_offset"] = devi.settings.time_offset
+# 				payload["location"] = devi.settings.location
+# 				payload["aspect_ratio_width"] = devi.settings.aspect_ratio_width
+# 				payload["aspect_ratio_height"] = devi.settings.aspect_ratio_height
 
-				resp = jsonify(payload)
-				resp.status_code = 200
-				return resp
+# 				resp = jsonify(payload)
+# 				resp.status_code = 200
+# 				return resp
 
-			else:
-				resp = jsonify(payload)
-				resp.status_code = 500
-				return resp
+# 			else:
+# 				resp = jsonify(payload)
+# 				resp.status_code = 500
+# 				return resp
 
-		else:
-			resp = jsonify(payload)
-			resp.status_code = 400
-			return resp
+# 		else:
+# 			resp = jsonify(payload)
+# 			resp.status_code = 400
+# 			return resp
 
-	else:
-		resp = jsonify(payload)
-		resp.status_code = 405
-		return resp
+# 	else:
+# 		resp = jsonify(payload)
+# 		resp.status_code = 405
+# 		return resp
 
-# Site
-@site.route("/site/settings/update/<int:id>", methods=["PUT"])
-def update_settings(id):
-	payload = {}
+# # Site
+# @site.route("/site/settings/update/<int:id>", methods=["PUT"])
+# def update_settings(id):
+# 	payload = {}
 
-	if request.method == 'PUT':
-		devi = Device.query.get(id)
-		if devi != None:
+# 	if request.method == 'PUT':
+# 		devi = Device.query.get(id)
+# 		if devi != None:
 
-			# Check if aspect ration is different so that it can resize all images
-			resize = False
-			if devi.settings.aspect_ratio_width != float(request.json["aspect_ratio_width"]) or \
-				devi.settings.aspect_ratio_height != float(request.json["aspect_ratio_height"]):
-				resize = True
+# 			# Check if aspect ration is different so that it can resize all images
+# 			resize = False
+# 			if devi.settings.aspect_ratio_width != float(request.json["aspect_ratio_width"]) or \
+# 				devi.settings.aspect_ratio_height != float(request.json["aspect_ratio_height"]):
+# 				resize = True
 
-			devi.settings.toggle_pay = request.json["toggle_pay"]
-			devi.settings.price = request.json["price"]
-			devi.settings.charge_time = request.json["charge_time"]
-			devi.settings.time_offset = request.json["time_offset"]
-			devi.settings.location = request.json["location"]
-			devi.settings.aspect_ratio_width = request.json["aspect_ratio_width"]
-			devi.settings.aspect_ratio_height = request.json["aspect_ratio_height"]
+# 			devi.settings.toggle_pay = request.json["toggle_pay"]
+# 			devi.settings.price = request.json["price"]
+# 			devi.settings.charge_time = request.json["charge_time"]
+# 			devi.settings.time_offset = request.json["time_offset"]
+# 			devi.settings.location = request.json["location"]
+# 			devi.settings.aspect_ratio_width = request.json["aspect_ratio_width"]
+# 			devi.settings.aspect_ratio_height = request.json["aspect_ratio_height"]
 
-			if resize:
-				resize_all_images(devi.settings.aspect_ratio_width, devi.settings.aspect_ratio_height, devi.id)
+# 			if resize:
+# 				resize_all_images(devi.settings.aspect_ratio_width, devi.settings.aspect_ratio_height, devi.id)
 
-			db.session.commit()
+# 			db.session.commit()
 
-			resp = jsonify(payload)
-			resp.status_code = 200
-			return resp
-		else:
-			resp = jsonify(payload)
-			resp.status_code = 400
-			return resp
-	else:
-		resp = jsonify(payload)
-		resp.status_code = 405
-		return resp
+# 			resp = jsonify(payload)
+# 			resp.status_code = 200
+# 			return resp
+# 		else:
+# 			resp = jsonify(payload)
+# 			resp.status_code = 400
+# 			return resp
+# 	else:
+# 		resp = jsonify(payload)
+# 		resp.status_code = 405
+# 		return resp
 
 # Site
 @site.route("/site/images/upload/<int:id>", methods=['POST'])
