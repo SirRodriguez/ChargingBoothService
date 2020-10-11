@@ -1,7 +1,7 @@
 from flask import Blueprint, request, jsonify, current_app, send_from_directory
 from CB_service import db
 from CB_service.models import Device
-from CB_service.device.utils import resize_image
+from CB_service.images.utils import resize_image
 import os
 from os import listdir
 from os.path import isfile, join

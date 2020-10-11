@@ -1,6 +1,7 @@
 from flask import Blueprint, request, jsonify
 from CB_service import db
 from CB_service.models import Device, Settings
+import secrets
 
 register = Blueprint('register', __name__)
 
