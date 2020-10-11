@@ -274,231 +274,231 @@ device = Blueprint('device', __name__)
 # 		resp.status_code = 405
 # 		return resp
 
-@device.route("/device/img_count/<string:id_number>")
-def get_image_count(id_number):
-	payload = {}
-	if request.method == 'GET':
-		devi = Device.query.filter_by(id_number=id_number).first()
-		if devi != None:
+# @device.route("/device/img_count/<string:id_number>")
+# def get_image_count(id_number):
+# 	payload = {}
+# 	if request.method == 'GET':
+# 		devi = Device.query.filter_by(id_number=id_number).first()
+# 		if devi != None:
 
-			id = devi.id
-			path = os.path.join(current_app.root_path, 'static', 'picture_files', str(id))
-			count = 0
-			if os.path.isdir(path): # If no directory, send 0
-				all_files = [f for f in listdir(path) if isfile(join(path, f))]
-				for file in all_files:
-					count += 1
+# 			id = devi.id
+# 			path = os.path.join(current_app.root_path, 'static', 'picture_files', str(id))
+# 			count = 0
+# 			if os.path.isdir(path): # If no directory, send 0
+# 				all_files = [f for f in listdir(path) if isfile(join(path, f))]
+# 				for file in all_files:
+# 					count += 1
 
-			payload["image_count"] = count
+# 			payload["image_count"] = count
 
-			resp = jsonify(payload)
-			resp.status_code = 200
-			return resp
-		else:
-			resp = jsonify(payload)
-			resp.status_code = 400
-			return resp
-	else:
-		resp = jsonify(payload)
-		resp.status_code = 405
-		return resp
+# 			resp = jsonify(payload)
+# 			resp.status_code = 200
+# 			return resp
+# 		else:
+# 			resp = jsonify(payload)
+# 			resp.status_code = 400
+# 			return resp
+# 	else:
+# 		resp = jsonify(payload)
+# 		resp.status_code = 405
+# 		return resp
 
-@device.route("/device/grab_image/<string:id_number>/<int:img_num>/<random_hex>")
-def grab_image(id_number, img_num, random_hex):
-	payload = {}
-	if request.method == 'GET':
+# @device.route("/device/grab_image/<string:id_number>/<int:img_num>/<random_hex>")
+# def grab_image(id_number, img_num, random_hex):
+# 	payload = {}
+# 	if request.method == 'GET':
 
-		devi = Device.query.filter_by(id_number=id_number).first()
+# 		devi = Device.query.filter_by(id_number=id_number).first()
 
-		if devi != None:
-			id = devi.id
+# 		if devi != None:
+# 			id = devi.id
 
-			path = os.path.join(current_app.root_path, 'static', 'picture_files', str(id))
+# 			path = os.path.join(current_app.root_path, 'static', 'picture_files', str(id))
 
-			# Find extention
-			all_files = [f for f in listdir(path) if isfile(join(path, f))]
-			extention = ""
-			for file in all_files:
-				f_name, f_ext = os.path.splitext(file)
-				if f_name == str(img_num):
-					extention = f_ext
+# 			# Find extention
+# 			all_files = [f for f in listdir(path) if isfile(join(path, f))]
+# 			extention = ""
+# 			for file in all_files:
+# 				f_name, f_ext = os.path.splitext(file)
+# 				if f_name == str(img_num):
+# 					extention = f_ext
 
-			# Send the file
-			if os.path.isdir(path):
-				return send_from_directory(directory=path, filename=str(img_num) + extention)
-			else:
-				resp = jsonify(payload)
-				resp.status_code = 404
-				return resp
-		else:
-			resp = jsonify(payload)
-			resp.status_code = 400
-			return resp
-	else:
-		resp = jsonify(payload)
-		resp.status_code = 405
-		return resp
+# 			# Send the file
+# 			if os.path.isdir(path):
+# 				return send_from_directory(directory=path, filename=str(img_num) + extention)
+# 			else:
+# 				resp = jsonify(payload)
+# 				resp.status_code = 404
+# 				return resp
+# 		else:
+# 			resp = jsonify(payload)
+# 			resp.status_code = 400
+# 			return resp
+# 	else:
+# 		resp = jsonify(payload)
+# 		resp.status_code = 405
+# 		return resp
 
-@device.route("/device/grab_re_image/<string:id_number>/<int:img_num>/<random_hex>")
-def grab_resized_image(id_number, img_num, random_hex):
-	payload = {}
-	if request.method == 'GET':
+# @device.route("/device/grab_re_image/<string:id_number>/<int:img_num>/<random_hex>")
+# def grab_resized_image(id_number, img_num, random_hex):
+# 	payload = {}
+# 	if request.method == 'GET':
 
-		devi = Device.query.filter_by(id_number=id_number).first()
+# 		devi = Device.query.filter_by(id_number=id_number).first()
 
-		if devi != None:
-			id = devi.id
+# 		if devi != None:
+# 			id = devi.id
 
-			path = os.path.join(current_app.root_path, 'static', 'picture_files', str(id), 'resized')
+# 			path = os.path.join(current_app.root_path, 'static', 'picture_files', str(id), 'resized')
 
-			# Find extention
-			all_files = [f for f in listdir(path) if isfile(join(path, f))]
-			extention = ""
-			for file in all_files:
-				f_name, f_ext = os.path.splitext(file)
-				if f_name == str(img_num):
-					extention = f_ext
+# 			# Find extention
+# 			all_files = [f for f in listdir(path) if isfile(join(path, f))]
+# 			extention = ""
+# 			for file in all_files:
+# 				f_name, f_ext = os.path.splitext(file)
+# 				if f_name == str(img_num):
+# 					extention = f_ext
 
-			# Send the file
-			if os.path.isdir(path):
-				return send_from_directory(directory=path, filename=str(img_num) + extention)
-			else:
-				resp = jsonify(payload)
-				resp.status_code = 404
-				return resp
+# 			# Send the file
+# 			if os.path.isdir(path):
+# 				return send_from_directory(directory=path, filename=str(img_num) + extention)
+# 			else:
+# 				resp = jsonify(payload)
+# 				resp.status_code = 404
+# 				return resp
 
-		else:
-			resp = jsonify(payload)
-			resp.status_code = 400
-			return resp
-	else:
-		resp = jsonify(payload)
-		resp.status_code = 405
-		return resp
+# 		else:
+# 			resp = jsonify(payload)
+# 			resp.status_code = 400
+# 			return resp
+# 	else:
+# 		resp = jsonify(payload)
+# 		resp.status_code = 405
+# 		return resp
 
-@device.route("/device/images/upload/<string:id_number>", methods=['POST'])
-def upload_image(id_number):
-	payload = {}
+# @device.route("/device/images/upload/<string:id_number>", methods=['POST'])
+# def upload_image(id_number):
+# 	payload = {}
 
-	if request.method == 'POST':
+# 	if request.method == 'POST':
 
-		devi = Device.query.filter_by(id_number=id_number).first()
-		if devi != None:
+# 		devi = Device.query.filter_by(id_number=id_number).first()
+# 		if devi != None:
 
-			id = devi.id
-			# From settings get ration width and height
-			ratio_width = devi.settings.aspect_ratio_width
-			ratio_height = devi.settings.aspect_ratio_height
+# 			id = devi.id
+# 			# From settings get ration width and height
+# 			ratio_width = devi.settings.aspect_ratio_width
+# 			ratio_height = devi.settings.aspect_ratio_height
 
-			# Check if directory exists for device images
-			path = os.path.join(current_app.root_path, 'static', 'picture_files', str(id))
-			if not os.path.isdir(path):
-				os.mkdir(path)
+# 			# Check if directory exists for device images
+# 			path = os.path.join(current_app.root_path, 'static', 'picture_files', str(id))
+# 			if not os.path.isdir(path):
+# 				os.mkdir(path)
 
-			# Check if resized image directory exists
-			re_path = os.path.join(current_app.root_path, 'static', 'picture_files', str(id), 'resized')
-			if not os.path.isdir(re_path):
-				os.mkdir(re_path)
+# 			# Check if resized image directory exists
+# 			re_path = os.path.join(current_app.root_path, 'static', 'picture_files', str(id), 'resized')
+# 			if not os.path.isdir(re_path):
+# 				os.mkdir(re_path)
 
-			# Count how many images are in the directory
-			all_files = [f for f in listdir(path) if isfile(join(path, f))]
-			count = 0
-			for file in all_files:
-				count += 1
+# 			# Count how many images are in the directory
+# 			all_files = [f for f in listdir(path) if isfile(join(path, f))]
+# 			count = 0
+# 			for file in all_files:
+# 				count += 1
 
-			# Save the incomming images
-			files = request.files.to_dict(flat=False)
-			for image_file in files['image']:
-				print(image_file.filename)
-				_, f_ext = os.path.splitext(image_file.filename)
-				file_path = os.path.join(path, str(count) + f_ext)
-				image_file.save(file_path)
+# 			# Save the incomming images
+# 			files = request.files.to_dict(flat=False)
+# 			for image_file in files['image']:
+# 				print(image_file.filename)
+# 				_, f_ext = os.path.splitext(image_file.filename)
+# 				file_path = os.path.join(path, str(count) + f_ext)
+# 				image_file.save(file_path)
 
-				# Get a resized image
-				background_color = 'black'
-				re_img = resize_image(image_file, background_color, ratio_width, ratio_height)
+# 				# Get a resized image
+# 				background_color = 'black'
+# 				re_img = resize_image(image_file, background_color, ratio_width, ratio_height)
 
 
-				resized_file_path = os.path.join(current_app.root_path, 'static', 'picture_files', str(id), 'resized', str(count) + f_ext)
-				re_img.save(resized_file_path)
+# 				resized_file_path = os.path.join(current_app.root_path, 'static', 'picture_files', str(id), 'resized', str(count) + f_ext)
+# 				re_img.save(resized_file_path)
 
-				count += 1
+# 				count += 1
 
-			resp = jsonify(payload)
-			resp.status_code = 200
-			return resp
+# 			resp = jsonify(payload)
+# 			resp.status_code = 200
+# 			return resp
 
-		else:
-			resp = jsonify(payload)
-			resp.status_code = 400
-			return resp
+# 		else:
+# 			resp = jsonify(payload)
+# 			resp.status_code = 400
+# 			return resp
 
-	else:
-		resp = jsonify(payload)
-		resp.status_code = 405
-		return resp
+# 	else:
+# 		resp = jsonify(payload)
+# 		resp.status_code = 405
+# 		return resp
 
-@device.route("/device/remove_images/<string:id_number>/<string:removals>", methods=['DELETE'])
-def remove_images(id_number, removals):
-	payload = {}
+# @device.route("/device/remove_images/<string:id_number>/<string:removals>", methods=['DELETE'])
+# def remove_images(id_number, removals):
+# 	payload = {}
 
-	if request.method == 'DELETE':
-		devi = Device.query.filter_by(id_number=id_number).first()
+# 	if request.method == 'DELETE':
+# 		devi = Device.query.filter_by(id_number=id_number).first()
 
-		if devi != None:
-			id = devi.id
+# 		if devi != None:
+# 			id = devi.id
 
-			path = os.path.join(current_app.root_path, 'static', 'picture_files', str(id))
-			re_path = os.path.join(current_app.root_path, 'static', 'picture_files', str(id), 'resized')
-			if os.path.isdir(path):
+# 			path = os.path.join(current_app.root_path, 'static', 'picture_files', str(id))
+# 			re_path = os.path.join(current_app.root_path, 'static', 'picture_files', str(id), 'resized')
+# 			if os.path.isdir(path):
 
-				# Parse removals
-				rem_list = removals.split(",")
-				# fix index and put in a set
-				rem_set = set()
-				for index, value in enumerate(rem_list):
-					rem_set.add(str(int(rem_list[index])-1))
+# 				# Parse removals
+# 				rem_list = removals.split(",")
+# 				# fix index and put in a set
+# 				rem_set = set()
+# 				for index, value in enumerate(rem_list):
+# 					rem_set.add(str(int(rem_list[index])-1))
 
-				# Remove the image files in there
-				all_files = [f for f in listdir(path) if isfile(join(path, f))]
-				for file in all_files:
-					f_name, f_ext = os.path.splitext(file)
-					if f_name in rem_set:
-						file_path = os.path.join(path, file)
-						re_file_path = os.path.join(re_path, file) # Resized names are the same as the original
-						os.remove(file_path)
-						os.remove(re_file_path)
+# 				# Remove the image files in there
+# 				all_files = [f for f in listdir(path) if isfile(join(path, f))]
+# 				for file in all_files:
+# 					f_name, f_ext = os.path.splitext(file)
+# 					if f_name in rem_set:
+# 						file_path = os.path.join(path, file)
+# 						re_file_path = os.path.join(re_path, file) # Resized names are the same as the original
+# 						os.remove(file_path)
+# 						os.remove(re_file_path)
 
-				# readjust the file names
-				all_files = [f for f in listdir(path) if isfile(join(path, f))]
-				count = 0
-				for file in all_files:
-					f_name, f_ext = os.path.splitext(file)
-					# Original
-					src_path = os.path.join(path, file)
-					dst_path = os.path.join(path, str(count) + f_ext)
-					os.rename(src_path, dst_path)
+# 				# readjust the file names
+# 				all_files = [f for f in listdir(path) if isfile(join(path, f))]
+# 				count = 0
+# 				for file in all_files:
+# 					f_name, f_ext = os.path.splitext(file)
+# 					# Original
+# 					src_path = os.path.join(path, file)
+# 					dst_path = os.path.join(path, str(count) + f_ext)
+# 					os.rename(src_path, dst_path)
 
-					# Resized
-					src_path = os.path.join(re_path, file)
-					dst_path = os.path.join(re_path, str(count) + f_ext)
-					os.rename(src_path, dst_path)
-					count += 1
+# 					# Resized
+# 					src_path = os.path.join(re_path, file)
+# 					dst_path = os.path.join(re_path, str(count) + f_ext)
+# 					os.rename(src_path, dst_path)
+# 					count += 1
 
-				resp = jsonify(payload)
-				resp.status_code = 204
-				return resp
-			else:
-				resp = jsonify(payload)
-				resp.status_code = 400
-				return resp
+# 				resp = jsonify(payload)
+# 				resp.status_code = 204
+# 				return resp
+# 			else:
+# 				resp = jsonify(payload)
+# 				resp.status_code = 400
+# 				return resp
 
-		else:
-			resp = jsonify(payload)
-			resp.status_code = 400
-			return resp
+# 		else:
+# 			resp = jsonify(payload)
+# 			resp.status_code = 400
+# 			return resp
 
-	else:
-		resp = jsonify(payload)
-		resp.status_code = 405
-		return resp
+# 	else:
+# 		resp = jsonify(payload)
+# 		resp.status_code = 405
+# 		return resp

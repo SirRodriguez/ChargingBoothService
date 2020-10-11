@@ -1,6 +1,7 @@
 from flask import Blueprint, request, jsonify
 from CB_service import db
 from CB_service.models import Device
+from CB_service.device.utils import resize_all_images
 
 settings = Blueprint('settings', __name__)
 
