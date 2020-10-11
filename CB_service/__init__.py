@@ -24,8 +24,6 @@ def create_app(config_class=Config):
 	from CB_service.main.routes import main
 
 	from CB_service.device.routes import device
-	from CB_service.site.routes import site
-
 	from CB_service.register.routes import register
 	from CB_service.settings.routes import settings
 	from CB_service.sessions.routes import sessions
@@ -34,8 +32,6 @@ def create_app(config_class=Config):
 	app.register_blueprint(main)
 
 	app.register_blueprint(device)
-	app.register_blueprint(site)
-
 	app.register_blueprint(register)
 	app.register_blueprint(settings)
 	app.register_blueprint(sessions)
