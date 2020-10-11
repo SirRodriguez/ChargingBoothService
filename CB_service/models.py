@@ -13,10 +13,7 @@ class Device(db.Model):
 	id = db.Column(db.Integer, primary_key=True)
 	id_number = db.Column(db.String(50), unique=True, nullable=False) # Comunication for the device
 
-	# settings_id = db.Column(db.Integer, db.ForeignKey("settings.id"))
-
 	sessions = db.relationship('Session', backref='host', lazy=True)
-	# settings = db.relationship('Settings', backref='host', lazy=True, foreign_keys=[settings_id])
 	settings = db.relationship('Settings', backref='host', lazy=True, uselist=False)
 
 

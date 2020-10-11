@@ -1,5 +1,4 @@
-from flask import Blueprint, request, json, Response, jsonify
-from CB_service.models import User, Device
+from flask import Blueprint
 
 main = Blueprint('main', __name__)
 

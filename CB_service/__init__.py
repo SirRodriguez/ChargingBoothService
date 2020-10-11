@@ -23,13 +23,11 @@ def create_app(config_class=Config):
 
 	from CB_service.main.routes import main
 
-	from CB_service.device_module.routes import device_module
 	from CB_service.device.routes import device
 	from CB_service.site.routes import site
 
 	app.register_blueprint(main)
 
-	app.register_blueprint(device_module)
 	app.register_blueprint(device)
 	app.register_blueprint(site)
 
