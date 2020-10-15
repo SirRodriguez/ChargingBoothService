@@ -1,7 +1,13 @@
 from flask import current_app
-from datetime import datetime
-from CB_service import db
+from datetime import datetime, timedelta
+from CB_service import db, bcrypt
+import secrets
+import threading
+import time
 
+##############
+## Database ##
+##############
 
 class User(db.Model):
 	id = db.Column(db.Integer, primary_key=True)
@@ -43,8 +49,65 @@ class Settings(db.Model):
 
 	device_id = db.Column(db.Integer, db.ForeignKey('device.id'), nullable=False)
 
-# Class to count how many devices are using the image.
-class Images(db.Model):
-	id = db.Column(db.Integer, primary_key=True)
-	image_name = db.Column(db.String(50), nullable=False)
-	count = db.Column(db.Integer, nullable=False, default=0)
+
+###########
+## Local ##
+###########
+
+# Note UserManager will only check one
+# The Admin user
+class UserManager():
+	def __init__(self):
+		self.admin_key = "" # Long string to check if this is the admin
+		self.last_used = datetime.utcnow # Time stamp of last valid check in
+		self.thread_pool = list()
+
+
+	def verify_user(self, username, password):
+		user = User.query.filter_by(username=username).first()
+		# return user and bcrypt.check_password_hash(user.password, password)
+		if user and bcrypt.check_password_hash(user.password, password):
+			return True
+		return False
+
+	def verify_key(self, key):
+		# return self.admin_key == key
+		if self.admin_key == key:
+			return True
+		return False
+
+	def create_admin_key(self):
+		self.admin_key = secrets.token_hex(8)
+		self.last_used = datetime.utcnow
+
+		# Create a thread to handle the session and terminate when needed
+		counter = threading.Thread(target=self.handler, args=[])
+		counter.start()
+		self.thread_pool.append(counter)
+
+		return self.admin_key
+
+	# def elapsed_time(self):
+	# 	return datetime.utcnow() - self.date_initiated
+
+	# def get_time_remaining(self):
+	# 	time_remain = timedelta(seconds=self.total_seconds()) - self.elapsed_time()
+
+	# 	if time_remain < timedelta(seconds=0):
+	# 		return self.zero_time()
+	# 	else:
+	# 		return str(time_remain).split(".")[0]
+
+	def elapsed_time(self):
+		return datetime.utcnow() - self.last_used
+
+	def login_counter(self):
+		running = True
+		while running:
+			time_remain = timedelta(minutes=30) - self.elapsed_time()
+			if time_remain < timedelta(seconds=0): # time has run out
+				self.admin_key = ""
+				running = False
+
+			# Save CPU Time, Check every second.
+			time.sleep(1)
