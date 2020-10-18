@@ -4,6 +4,17 @@ from CB_service.models import User
 
 admin_user = Blueprint('admin_user', __name__)
 
+
+############
+## Device ##
+############
+
+##########
+## Site ##
+##########
+
+# Site and device share the same method endpoint here
+@admin_user.route("/device/admin_user/verify_user/<string:username>/<string:password>")
 @admin_user.route("/site/admin_user/verify_user/<string:username>/<string:password>")
 def verify_user(username, password):
 	payload = {}
@@ -20,6 +31,7 @@ def verify_user(username, password):
 		resp.status_code = 405
 		return resp
 
+@admin_user.route("/device/admin_user/account_info")
 @admin_user.route("/site/admin_user/account_info")
 def account_info():
 	payload = {}
@@ -37,6 +49,7 @@ def account_info():
 		resp.status_code = 405
 		return resp
 
+@admin_user.route("/device/admin_user/update_account/", methods=['PUT'])
 @admin_user.route("/site/admin_user/update_account/", methods=['PUT'])
 def update_account():
 	payload = {}
