@@ -5,13 +5,9 @@ from CB_service.models import User
 admin_user = Blueprint('admin_user', __name__)
 
 
-############
-## Device ##
-############
-
-##########
-## Site ##
-##########
+##########   ############
+## Site ##   ## Device ##
+##########   ############
 
 # Site and device share the same method endpoint here
 @admin_user.route("/device/admin_user/verify_user/<string:username>/<string:password>")
@@ -65,6 +61,25 @@ def update_account():
 		resp.status_code = 200
 		return resp
 
+	else:
+		resp = jsonify(payload)
+		resp.status_code = 405
+		return resp
+
+
+@admin_user.route("/device/admin_user/update_password/", methods=['PUT'])
+def update_password():
+	payload = {}
+	if request.method == 'PUT':
+		user = User.query.first()
+
+		user.password = request.json["hashed_password"]
+
+		db.session.commit()
+
+		resp = jsonify(payload)
+		resp.status_code = 200
+		return resp
 	else:
 		resp = jsonify(payload)
 		resp.status_code = 405
