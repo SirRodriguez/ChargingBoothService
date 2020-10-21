@@ -18,6 +18,7 @@ def get_image_count(id_number):
 	if request.method == 'GET':
 		devi = Device.query.filter_by(id_number=id_number).first()
 		if devi != None:
+			payload["registered"] = True
 
 			id = devi.id
 			path = os.path.join(current_app.root_path, 'static', 'picture_files', str(id))
@@ -29,10 +30,24 @@ def get_image_count(id_number):
 
 			payload["image_count"] = count
 
+			# Add the settings to the payload as well
+			settings = {}
+			settings["toggle_pay"] = devi.settings.toggle_pay
+			settings["price"] = devi.settings.price
+			settings["charge_time"] = devi.settings.charge_time
+			settings["time_offset"] = devi.settings.time_offset
+			settings["location"] = devi.settings.location
+			settings["aspect_ratio_width"] = devi.settings.aspect_ratio_width
+			settings["aspect_ratio_height"] = devi.settings.aspect_ratio_height
+
+			payload["settings"] = settings
+
 			resp = jsonify(payload)
 			resp.status_code = 200
 			return resp
 		else:
+			payload["registered"] = False
+
 			resp = jsonify(payload)
 			resp.status_code = 400
 			return resp

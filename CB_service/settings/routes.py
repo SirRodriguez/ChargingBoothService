@@ -16,6 +16,8 @@ def get_device_settings(id_number):
 	if request.method == 'GET':
 		devi = Device.query.filter_by(id_number=id_number).first()
 		if devi != None:
+			payload["registered"] = True
+
 			payload["toggle_pay"] = devi.settings.toggle_pay
 			payload["price"] = devi.settings.price
 			payload["charge_time"] = devi.settings.charge_time
@@ -28,6 +30,8 @@ def get_device_settings(id_number):
 			resp.status_code = 200
 			return resp
 		else:
+			payload["registered"] = False
+
 			resp = jsonify(payload)
 			resp.status_code = 400
 			return resp
