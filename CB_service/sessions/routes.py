@@ -58,6 +58,8 @@ def get_deivce_sessions(id_number, page):
 	if request.method == 'GET':
 		devi = Device.query.filter_by(id_number=id_number).first()
 		if devi != None:
+			payload["registered"] = True
+
 			sessions = Session.query.filter_by(host=devi)\
 				.order_by(Session.date_initiated.desc())\
 				.paginate(page=page, per_page=10)
@@ -94,10 +96,24 @@ def get_deivce_sessions(id_number, page):
 				else:
 					payload["iter_pages"].append(0)
 
+			# Add the settings to the payload as well
+			settings = {}
+			settings["toggle_pay"] = devi.settings.toggle_pay
+			settings["price"] = devi.settings.price
+			settings["charge_time"] = devi.settings.charge_time
+			settings["time_offset"] = devi.settings.time_offset
+			settings["location"] = devi.settings.location
+			settings["aspect_ratio_width"] = devi.settings.aspect_ratio_width
+			settings["aspect_ratio_height"] = devi.settings.aspect_ratio_height
+
+			payload["settings"] = settings
+
 			resp = jsonify(payload)
 			resp.status_code = 200
 			return resp
 		else:
+			payload["registered"] = False
+
 			resp = jsonify(payload)
 			resp.status_code = 400
 			return resp
@@ -112,6 +128,8 @@ def get_all_device_sessions(id_number):
 	if request.method == 'GET':
 		devi = Device.query.filter_by(id_number=id_number).first()
 		if devi != None:
+			payload["registered"] = True
+
 			sessions = Session.query.filter_by(host=devi)\
 				.order_by(Session.date_initiated.desc())\
 				.all()
@@ -140,10 +158,24 @@ def get_all_device_sessions(id_number):
 
 				payload["sessions"].append(sess_items)
 
+			# Add the settings to the payload as well
+			settings = {}
+			settings["toggle_pay"] = devi.settings.toggle_pay
+			settings["price"] = devi.settings.price
+			settings["charge_time"] = devi.settings.charge_time
+			settings["time_offset"] = devi.settings.time_offset
+			settings["location"] = devi.settings.location
+			settings["aspect_ratio_width"] = devi.settings.aspect_ratio_width
+			settings["aspect_ratio_height"] = devi.settings.aspect_ratio_height
+
+			payload["settings"] = settings
+
 			resp = jsonify(payload)
 			resp.status_code = 200
 			return resp
 		else:
+			payload["registered"] = False
+
 			resp = jsonify(payload)
 			resp.status_code = 400
 			return resp
