@@ -199,6 +199,18 @@ def get_sessions(id, page):
 				else:
 					payload["iter_pages"].append(0)
 
+			# Add the settings to the payload as well
+			settings = {}
+			settings["toggle_pay"] = devi.settings.toggle_pay
+			settings["price"] = devi.settings.price
+			settings["charge_time"] = devi.settings.charge_time
+			settings["time_offset"] = devi.settings.time_offset
+			settings["location"] = devi.settings.location
+			settings["aspect_ratio_width"] = devi.settings.aspect_ratio_width
+			settings["aspect_ratio_height"] = devi.settings.aspect_ratio_height
+
+			payload["settings"] = settings
+
 			resp = jsonify(payload)
 			resp.status_code = 200
 			return resp
@@ -245,6 +257,17 @@ def all_sessions(id):
 
 				payload["sessions"].append(sess_items)
 
+			# Add the settings to the payload as well
+			settings = {}
+			settings["toggle_pay"] = devi.settings.toggle_pay
+			settings["price"] = devi.settings.price
+			settings["charge_time"] = devi.settings.charge_time
+			settings["time_offset"] = devi.settings.time_offset
+			settings["location"] = devi.settings.location
+			settings["aspect_ratio_width"] = devi.settings.aspect_ratio_width
+			settings["aspect_ratio_height"] = devi.settings.aspect_ratio_height
+
+			payload["settings"] = settings
 
 			resp = jsonify(payload)
 			resp.status_code = 200

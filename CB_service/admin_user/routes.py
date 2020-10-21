@@ -67,6 +67,7 @@ def update_account():
 		return resp
 
 
+@admin_user.route("/site/admin_user/update_password/", methods=['PUT'])
 @admin_user.route("/device/admin_user/update_password/", methods=['PUT'])
 def update_password():
 	payload = {}

@@ -282,6 +282,37 @@ def device_location_img_count(id):
 		return resp
 
 # Site
+@images.route("/site/image_count/<int:id>")
+def device_img_count(id):
+	payload = {}
+	if request.method == 'GET':
+		devi = Device.query.get(id)
+
+		if devi != None:
+			# Grab image count
+			path = os.path.join(current_app.root_path, 'static', 'picture_files', str(id))
+			count = 0
+			if os.path.isdir(path): # If no directory, send nothing
+				all_files = [f for f in listdir(path) if isfile(join(path, f))]
+				for file in all_files:
+					count += 1
+
+			payload["image_count"] = count
+
+			resp = jsonify(payload)
+			resp.status_code = 200
+			return resp
+		else:
+			resp = jsonify(payload)
+			resp.status_code = 400
+			return resp
+	else:
+		resp = jsonify(payload)
+		resp.status_code = 405
+		return resp
+
+
+# Site
 @images.route("/site/grab_image/<int:id>/<int:img_num>/<random_hex>")
 def grab_image(id, img_num, random_hex):
 	payload = {}
