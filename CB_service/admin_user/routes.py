@@ -10,11 +10,13 @@ admin_user = Blueprint('admin_user', __name__)
 ##########   ############
 
 # Site and device share the same method endpoint here
-@admin_user.route("/device/admin_user/verify_user/<string:username>/<string:password>")
-@admin_user.route("/site/admin_user/verify_user/<string:username>/<string:password>")
-def verify_user(username, password):
+@admin_user.route("/device/admin_user/verify_user")
+@admin_user.route("/site/admin_user/verify_user")
+def verify_user():
 	payload = {}
 	if request.method == 'GET':
+		username = request.json["username"]
+		password = request.json["password"]
 
 		payload["user_verified"] = userManager.verify_user(username, password)
 
