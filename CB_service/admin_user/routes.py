@@ -32,7 +32,7 @@ def verify_user():
 		resp = jsonify(payload)
 		resp.status_code = 405
 		return resp
-## TODO!!!
+
 @admin_user.route("/device/admin_user/account_info/<string:admin_key>")
 @admin_user.route("/site/admin_user/account_info/<string:admin_key>")
 def account_info(admin_key):
@@ -56,11 +56,16 @@ def account_info(admin_key):
 		resp.status_code = 405
 		return resp
 
-@admin_user.route("/device/admin_user/update_account/", methods=['PUT'])
-@admin_user.route("/site/admin_user/update_account/", methods=['PUT'])
-def update_account():
+@admin_user.route("/device/admin_user/update_account/<string:admin_key>", methods=['PUT'])
+@admin_user.route("/site/admin_user/update_account/<string:admin_key>", methods=['PUT'])
+def update_account(admin_key):
 	payload = {}
 	if request.method == 'PUT':
+		if not userManager.verify_key(admin_key):
+			resp = jsonify(payload)
+			resp.status_code = 401
+			return resp
+
 		user = User.query.first()
 
 		user.username = request.json["username"]
