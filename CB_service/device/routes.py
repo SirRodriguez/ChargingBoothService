@@ -1,15 +1,20 @@
 from flask import Blueprint, request, jsonify
-from CB_service import db
+from CB_service import db, userManager
 from CB_service.models import Device
 
 device = Blueprint('device', __name__)
 
 
 # Site
-@device.route("/site/get_all")
-def all_devices():
+@device.route("/site/get_all/<string:admin_key>")
+def all_devices(admin_key):
 	payload = {}
 	if request.method == 'GET':
+		if not userManager.verify_key(admin_key):
+			resp = jsonify(payload)
+			resp.status_code = 401
+			return resp
+
 		all_devices = Device.query.order_by(Device.id.asc())
 
 		list_id = []
@@ -36,11 +41,16 @@ def all_devices():
 		return resp
 
 # Site
-@device.route("/site/remove_device/<int:id>", methods=['DELETE'])
-def remove_device(id):
+@device.route("/site/remove_device/<int:id>/<string:admin_key>", methods=['DELETE'])
+def remove_device(id, admin_key):
 	payload = {}
 	
 	if request.method == 'DELETE':
+		if not userManager.verify_key(admin_key):
+			resp = jsonify(payload)
+			resp.status_code = 401
+			return resp
+
 		devi = Device.query.get(id)
 		if devi != None:
 			payload["deleted_id"] = devi.id
@@ -68,10 +78,15 @@ def remove_device(id):
 		return resp
 
 # Site
-@device.route("/site/location/<int:id>")
-def device_location(id):
+@device.route("/site/location/<int:id>/<string:admin_key>")
+def device_location(id, admin_key):
 	payload = {}
 	if request.method == 'GET':
+		if not userManager.verify_key(admin_key):
+			resp = jsonify(payload)
+			resp.status_code = 401
+			return resp
+
 		devi = Device.query.get(id)
 
 		if devi != None:
