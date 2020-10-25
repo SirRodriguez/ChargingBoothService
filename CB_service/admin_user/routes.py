@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify, render_template
-from CB_service import userManager, db, bcrypt
+from CB_service import userManager, db, bcrypt, resetLimiter
 from CB_service.models import User
 from CB_service.admin_user.forms import ResetPasswordForm
 from CB_service.admin_user.utils import send_reset_email
@@ -125,9 +125,10 @@ def logout():
 # This will be a web page to reset the password
 @admin_user.route("/reset_password")
 def reset_password():
-	user = User.query.first()
-
-	send_reset_email(user=user)
+	if not resetLimiter.reached_limit():
+		resetLimiter.add_count()
+		user = User.query.first()
+		send_reset_email(user=user)
 
 	return render_template('reset_password.html')
 

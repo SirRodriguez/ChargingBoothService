@@ -12,8 +12,9 @@ bcrypt = Bcrypt()
 # login_manager.login_message_category = 'info'
 mail = Mail()
 
-from CB_service.models import UserManager
+from CB_service.models import UserManager, ResetLimiter
 userManager = UserManager()
+resetLimiter = ResetLimiter()
 
 def create_app(config_class=Config):
 	app = Flask(__name__)

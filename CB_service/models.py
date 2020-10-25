@@ -68,6 +68,46 @@ class Settings(db.Model):
 ## Local ##
 ###########
 
+class ResetLimiter():
+	def __init__(self):
+		self.limit = 3
+		self.decrement_minutes = 10 # how many minutes it takes to decrese the limit by one
+		self.reset_count = 0
+		self.thread_pool = list()
+
+	def add_count(self):
+		if self.reset_count == 0:
+			self.reset_count += 1
+
+			# Start a thread
+			counter = threading.Thread(target=self.reset_counter, args=[])
+			counter.start()
+			self.thread_pool.append(counter)
+		else:
+			self.reset_count += 1
+
+	def reached_limit(self):
+		return self.reset_count >= self.limit
+
+	def reset_counter(self):
+		running = True
+		seconds = 0
+		while running:
+			# If timer is up
+			if seconds >= self.decrement_minutes * 60:
+				if self.reset_count > 0:
+					self.reset_count -= 1
+				else:
+					running = False
+				seconds = 0
+			# timer is not up yet
+			else:
+				seconds += 1
+
+			# Wait one second
+			time.sleep(1)
+
+
 # Note UserManager will only check one
 # The Admin user
 class UserManager():
@@ -91,9 +131,6 @@ class UserManager():
 		if self.admin_key == "":
 			return False
 		return self.admin_key == key
-		# if self.admin_key == key:
-		# 	return True
-		# return False
 
 	def create_admin_key(self):
 		self.admin_key = secrets.token_hex(50)
