@@ -83,11 +83,16 @@ def update_account(admin_key):
 		return resp
 
 
-@admin_user.route("/site/admin_user/update_password/", methods=['PUT'])
-@admin_user.route("/device/admin_user/update_password/", methods=['PUT'])
-def update_password():
+@admin_user.route("/device/admin_user/update_password/<string:admin_key>", methods=['PUT'])
+@admin_user.route("/site/admin_user/update_password/<string:admin_key>", methods=['PUT'])
+def update_password(admin_key):
 	payload = {}
 	if request.method == 'PUT':
+		if not userManager.verify_key(admin_key):
+			resp = jsonify(payload)
+			resp.status_code = 401
+			return resp
+			
 		user = User.query.first()
 
 		user.password = request.json["hashed_password"]
