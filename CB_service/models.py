@@ -1,5 +1,6 @@
 from flask import current_app
 from datetime import datetime, timedelta
+from itsdangerous import TimedJSONWebSignatureSerializer as Serializer
 from CB_service import db, bcrypt
 import secrets
 import threading
@@ -14,6 +15,19 @@ class User(db.Model):
 	username = db.Column(db.String(20), unique=True, nullable=False)
 	email = db.Column(db.String(120), unique=True, nullable=False)
 	password = db.Column(db.String(60), nullable=False)
+
+	def get_reset_token(self, expires_sec=1800):
+		s = Serializer(current_app.config['SECRET_KEY'], expires_sec)
+		return s.dumps({'user_id': self.id}).decode('utf-8')
+
+	@staticmethod
+	def verify_reset_token(token):
+		s = Serializer(current_app.config['SECRET_KEY'])
+		try:
+			user_id = s.loads(token)['user_id']
+		except:
+			return None
+		return User.query.get(user_id)
 
 class Device(db.Model):
 	id = db.Column(db.Integer, primary_key=True)
@@ -59,16 +73,19 @@ class Settings(db.Model):
 class UserManager():
 	def __init__(self):
 		self.admin_key = "" # Long string to check if this is the admin
-		self.last_used = datetime.utcnow # Time stamp of last valid check in
+		self.last_used = datetime.utcnow() # Time stamp of last valid check in
 		self.thread_pool = list()
 
 
 	def verify_user(self, username, password):
 		user = User.query.filter_by(username=username).first()
 		# return user and bcrypt.check_password_hash(user.password, password)
+		# if user and bcrypt.check_password_hash(user.password, password):
+		# 	return True
+		# return False
 		if user and bcrypt.check_password_hash(user.password, password):
-			return True
-		return False
+			return self.create_admin_key()
+		return None
 
 	def verify_key(self, key):
 		# return self.admin_key == key
@@ -77,26 +94,15 @@ class UserManager():
 		return False
 
 	def create_admin_key(self):
-		self.admin_key = secrets.token_hex(8)
-		self.last_used = datetime.utcnow
+		self.admin_key = secrets.token_hex(50)
+		self.last_used = datetime.utcnow()
 
 		# Create a thread to handle the session and terminate when needed
-		counter = threading.Thread(target=self.handler, args=[])
+		counter = threading.Thread(target=self.login_counter, args=[])
 		counter.start()
 		self.thread_pool.append(counter)
 
 		return self.admin_key
-
-	# def elapsed_time(self):
-	# 	return datetime.utcnow() - self.date_initiated
-
-	# def get_time_remaining(self):
-	# 	time_remain = timedelta(seconds=self.total_seconds()) - self.elapsed_time()
-
-	# 	if time_remain < timedelta(seconds=0):
-	# 		return self.zero_time()
-	# 	else:
-	# 		return str(time_remain).split(".")[0]
 
 	def elapsed_time(self):
 		return datetime.utcnow() - self.last_used
