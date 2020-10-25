@@ -76,22 +76,24 @@ class UserManager():
 		self.last_used = datetime.utcnow() # Time stamp of last valid check in
 		self.thread_pool = list()
 
+	def reset_admin_key(self):
+		self.admin_key = ""
 
 	def verify_user(self, username, password):
 		user = User.query.filter_by(username=username).first()
-		# return user and bcrypt.check_password_hash(user.password, password)
-		# if user and bcrypt.check_password_hash(user.password, password):
-		# 	return True
-		# return False
 		if user and bcrypt.check_password_hash(user.password, password):
 			return self.create_admin_key()
 		return None
 
 	def verify_key(self, key):
-		# return self.admin_key == key
-		if self.admin_key == key:
-			return True
-		return False
+		if key == "":
+			return False
+		if self.admin_key == "":
+			return False
+		return self.admin_key == key
+		# if self.admin_key == key:
+		# 	return True
+		# return False
 
 	def create_admin_key(self):
 		self.admin_key = secrets.token_hex(50)

@@ -92,7 +92,7 @@ def update_password(admin_key):
 			resp = jsonify(payload)
 			resp.status_code = 401
 			return resp
-			
+
 		user = User.query.first()
 
 		user.password = request.json["hashed_password"]
@@ -107,6 +107,20 @@ def update_password(admin_key):
 		resp.status_code = 405
 		return resp
 
+@admin_user.route("/device/admin_user/logout")
+@admin_user.route("/site/admin_user/logout")
+def logout():
+	payload = {}
+	if request.method == 'GET':
+		userManager.reset_admin_key()
+
+		resp = jsonify(payload)
+		resp.status_code = 200
+		return resp
+	else:
+		resp = jsonify(payload)
+		resp.status_code = 405
+		return resp
 
 # This will be a web page to reset the password
 @admin_user.route("/reset_password")
