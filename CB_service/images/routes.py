@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify, current_app, send_from_directory
-from CB_service import db
+from CB_service import db, userManager
 from CB_service.models import Device
 from CB_service.images.utils import resize_image
 import os
@@ -12,6 +12,7 @@ images = Blueprint('images', __name__)
 ## Device ##
 ############
 
+# Does not have an admin key because kiosk mode uses this route for not admin purposes
 @images.route("/device/img_count/<string:id_number>")
 def get_image_count(id_number):
 	payload = {}
@@ -56,6 +57,7 @@ def get_image_count(id_number):
 		resp.status_code = 405
 		return resp
 
+# Does not have an admin key because kiosk mode uses this route for not admin purposes
 @images.route("/device/grab_image/<string:id_number>/<int:img_num>/<random_hex>")
 def grab_device_image(id_number, img_num, random_hex):
 	payload = {}
@@ -92,6 +94,7 @@ def grab_device_image(id_number, img_num, random_hex):
 		resp.status_code = 405
 		return resp
 
+# Does not have an admin key because kiosk mode uses this route for not admin purposes
 @images.route("/device/grab_re_image/<string:id_number>/<int:img_num>/<random_hex>")
 def grab_resized_image(id_number, img_num, random_hex):
 	payload = {}
@@ -129,11 +132,15 @@ def grab_resized_image(id_number, img_num, random_hex):
 		resp.status_code = 405
 		return resp
 
-@images.route("/device/images/upload/<string:id_number>", methods=['POST'])
-def upload_device_images(id_number):
+@images.route("/device/images/upload/<string:id_number>/<string:admin_key>", methods=['POST'])
+def upload_device_images(id_number, admin_key):
 	payload = {}
 
 	if request.method == 'POST':
+		if not userManager.verify_key(admin_key):
+			resp = jsonify(payload)
+			resp.status_code = 401
+			return resp
 
 		devi = Device.query.filter_by(id_number=id_number).first()
 		if devi != None:
@@ -190,11 +197,16 @@ def upload_device_images(id_number):
 		resp.status_code = 405
 		return resp
 
-@images.route("/device/remove_images/<string:id_number>/<string:removals>", methods=['DELETE'])
-def remove_device_images(id_number, removals):
+@images.route("/device/remove_images/<string:id_number>/<string:removals>/<string:admin_key>", methods=['DELETE'])
+def remove_device_images(id_number, removals, admin_key):
 	payload = {}
 
 	if request.method == 'DELETE':
+		if not userManager.verify_key(admin_key):
+			resp = jsonify(payload)
+			resp.status_code = 401
+			return resp
+
 		devi = Device.query.filter_by(id_number=id_number).first()
 
 		if devi != None:
@@ -261,10 +273,15 @@ def remove_device_images(id_number, removals):
 ##########
 
 # Site
-@images.route("/site/location_image_count/<int:id>")
-def device_location_img_count(id):
+@images.route("/site/location_image_count/<int:id>/<string:admin_key>")
+def device_location_img_count(id, admin_key):
 	payload = {}
 	if request.method == 'GET':
+		if not userManager.verify_key(admin_key):
+			resp = jsonify(payload)
+			resp.status_code = 401
+			return resp
+
 		devi = Device.query.get(id)
 
 		if devi != None:
@@ -297,10 +314,15 @@ def device_location_img_count(id):
 		return resp
 
 # Site
-@images.route("/site/image_count/<int:id>")
-def device_img_count(id):
+@images.route("/site/image_count/<int:id>/<string:admin_key>")
+def device_img_count(id, admin_key):
 	payload = {}
 	if request.method == 'GET':
+		if not userManager.verify_key(admin_key):
+			resp = jsonify(payload)
+			resp.status_code = 401
+			return resp
+
 		devi = Device.query.get(id)
 
 		if devi != None:
@@ -328,6 +350,7 @@ def device_img_count(id):
 
 
 # Site
+# this will not have an admin key becuase it is used to grab a single image from the service
 @images.route("/site/grab_image/<int:id>/<int:img_num>/<random_hex>")
 def grab_image(id, img_num, random_hex):
 	payload = {}
@@ -355,11 +378,16 @@ def grab_image(id, img_num, random_hex):
 		return resp
 
 # Site
-@images.route("/site/remove_images/<int:id>/<string:removals>", methods=['DELETE'])
-def remove_images(id, removals):
+@images.route("/site/remove_images/<int:id>/<string:removals>/<string:admin_key>", methods=['DELETE'])
+def remove_images(id, removals, admin_key):
 	payload = {}
 
 	if request.method == 'DELETE':
+		if not userManager.verify_key(admin_key):
+			resp = jsonify(payload)
+			resp.status_code = 401
+			return resp
+
 		path = os.path.join(current_app.root_path, 'static', 'picture_files', str(id))
 		re_path = os.path.join(current_app.root_path, 'static', 'picture_files', str(id), 'resized')
 		if os.path.isdir(path):
@@ -411,11 +439,16 @@ def remove_images(id, removals):
 
 
 # Site
-@images.route("/site/images/upload/<int:id>", methods=['POST'])
-def upload_images(id):
+@images.route("/site/images/upload/<int:id>/<string:admin_key>", methods=['POST'])
+def upload_images(id, admin_key):
 	payload = {}
 
 	if request.method == 'POST':
+		if not userManager.verify_key(admin_key):
+			resp = jsonify(payload)
+			resp.status_code = 401
+			return resp
+			
 		devi = Device.query.get(id)
 
 		if devi != None:
