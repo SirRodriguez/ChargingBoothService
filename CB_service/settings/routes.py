@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify
-from CB_service import db
+from CB_service import db, userManager
 from CB_service.models import Device
 from CB_service.settings.utils import resize_all_images
 
@@ -10,6 +10,7 @@ settings = Blueprint('settings', __name__)
 ## Device ##
 ############
 
+# This route will not use admin key because kisok mode uses this to get settings for non admin use
 @settings.route("/device/get_settings/<string:id_number>")
 def get_device_settings(id_number):
 	payload = {}
@@ -40,10 +41,15 @@ def get_device_settings(id_number):
 		resp.status_code = 405
 		return resp
 
-@settings.route("/device/update_setting/<string:id_number>", methods=['PUT'])
-def update_device_settings(id_number):
+@settings.route("/device/update_setting/<string:id_number>/<string:admin_key>", methods=['PUT'])
+def update_device_settings(id_number, admin_key):
 	payload = {}
 	if request.method == 'PUT':
+		if not userManager.verify_key(admin_key):
+			resp = jsonify(payload)
+			resp.status_code = 401
+			return resp
+			
 		devi = Device.query.filter_by(id_number=id_number).first()
 		if devi != None:
 
@@ -84,11 +90,16 @@ def update_device_settings(id_number):
 ##########
 
 # Site
-@settings.route("/site/settings/<int:id>")
-def device_settings(id):
+@settings.route("/site/settings/<int:id>/<string:admin_key>")
+def device_settings(id, admin_key):
 	payload = {}
 
 	if request.method == 'GET':
+		if not userManager.verify_key(admin_key):
+			resp = jsonify(payload)
+			resp.status_code = 401
+			return resp
+
 		devi = Device.query.get(id)
 
 		if devi != None:
@@ -121,11 +132,16 @@ def device_settings(id):
 		return resp
 
 # Site
-@settings.route("/site/settings/update/<int:id>", methods=["PUT"])
-def update_settings(id):
+@settings.route("/site/settings/update/<int:id>/<string:admin_key>", methods=["PUT"])
+def update_settings(id, admin_key):
 	payload = {}
 
 	if request.method == 'PUT':
+		if not userManager.verify_key(admin_key):
+			resp = jsonify(payload)
+			resp.status_code = 401
+			return resp
+
 		devi = Device.query.get(id)
 		if devi != None:
 
