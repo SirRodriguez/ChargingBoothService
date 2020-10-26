@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify
-from CB_service import db
+from CB_service import db, userManager
 from CB_service.models import Device, Session
 import datetime
 
@@ -10,6 +10,7 @@ sessions = Blueprint('sessions', __name__)
 ## Device ##
 ############
 
+# This will not have an admin key because it is not used by admin route
 @sessions.route("/device/add_session/<string:id_number>", methods=['PUT'])
 def add_session(id_number):
 	payload = {}
@@ -52,10 +53,15 @@ def add_session(id_number):
 		resp.status_code = 405
 		return resp
 
-@sessions.route("/device/sessions/<string:id_number>/<int:page>")
-def get_deivce_sessions(id_number, page):
+@sessions.route("/device/sessions/<string:id_number>/<int:page>/<string:admin_key>")
+def get_deivce_sessions(id_number, page, admin_key):
 	payload = {}
 	if request.method == 'GET':
+		if not userManager.verify_key(admin_key):
+			resp = jsonify(payload)
+			resp.status_code = 401
+			return resp
+
 		devi = Device.query.filter_by(id_number=id_number).first()
 		if devi != None:
 			payload["registered"] = True
@@ -122,10 +128,15 @@ def get_deivce_sessions(id_number, page):
 		resp.status_code = 405
 		return resp
 
-@sessions.route("/device/all_sessions/<string:id_number>")
-def get_all_device_sessions(id_number):
+@sessions.route("/device/all_sessions/<string:id_number>/<string:admin_key>")
+def get_all_device_sessions(id_number, admin_key):
 	payload = {}
 	if request.method == 'GET':
+		if not userManager.verify_key(admin_key):
+			resp = jsonify(payload)
+			resp.status_code = 401
+			return resp
+
 		devi = Device.query.filter_by(id_number=id_number).first()
 		if devi != None:
 			payload["registered"] = True
@@ -189,10 +200,15 @@ def get_all_device_sessions(id_number):
 ## Site ##
 ##########
 
-@sessions.route("/site/sessions/<int:id>/<int:page>")
-def get_sessions(id, page):
+@sessions.route("/site/sessions/<int:id>/<int:page>/<string:admin_key>")
+def get_sessions(id, page, admin_key):
 	payload = {}
 	if request.method == 'GET':
+		if not userManager.verify_key(admin_key):
+			resp = jsonify(payload)
+			resp.status_code = 401
+			return resp
+
 		devi = Device.query.filter_by(id=id).first()
 		if devi != None:
 			sessions = Session.query.filter_by(host=devi)\
@@ -255,10 +271,15 @@ def get_sessions(id, page):
 		resp.status_code = 405
 		return resp
 
-@sessions.route("/site/all_sessions/<int:id>")
-def all_sessions(id):
+@sessions.route("/site/all_sessions/<int:id>/<string:admin_key>")
+def all_sessions(id, admin_key):
 	payload = {}
 	if request.method == 'GET':
+		if not userManager.verify_key(admin_key):
+			resp = jsonify(payload)
+			resp.status_code = 401
+			return resp
+
 		devi = Device.query.filter_by(id=id).first()
 		if devi != None:
 			sessions = Session.query.filter_by(host=devi)\
