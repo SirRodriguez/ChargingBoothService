@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify
-from CB_service import db
+from CB_service import db, userManager
 from CB_service.models import Device, Settings
 import secrets
 
@@ -10,6 +10,15 @@ register = Blueprint('register', __name__)
 def register_device():
 	payload = {}
 	if request.method == 'GET':
+		# User verification
+		username = request.json["username"]
+		password = request.json["password"]
+		if not userManager.only_verify_user(username, password):
+			resp = jsonify(payload)
+			resp.status_code = 401
+			return resp
+
+
 		# Create a random hex that will be used to 
 		# keep track of what device is being talked to
 		random_hex = secrets.token_hex(25)

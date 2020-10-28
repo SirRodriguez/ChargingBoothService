@@ -119,6 +119,10 @@ class UserManager():
 	def reset_admin_key(self):
 		self.admin_key = ""
 
+	def only_verify_user(self, username, password):
+		user = User.query.filter_by(username=username).first()
+		return user and bcrypt.check_password_hash(user.password, password)
+
 	def verify_user(self, username, password):
 		user = User.query.filter_by(username=username).first()
 		if user and bcrypt.check_password_hash(user.password, password):

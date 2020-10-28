@@ -1,9 +1,11 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, current_app
 from CB_service import db, userManager
-from CB_service.models import Device
+from CB_service.models import Device, Session
+import os
+from os import listdir
+from os.path import isfile, join
 
 device = Blueprint('device', __name__)
-
 
 # Site
 @device.route("/site/get_all/<string:admin_key>")
@@ -56,11 +58,44 @@ def remove_device(id, admin_key):
 			payload["deleted_id"] = devi.id
 			payload["deleted_num"] = devi.id_number
 
-			# Settings must be seleted along with it
-			# Later all the session that go along with it
-			# And also all the image files that go along with it
+			# Remove all the images that go along with it
+			# -----
+			# Check if the directory exists
+			path = os.path.join(current_app.root_path, 'static', 'picture_files', str(id))
+			if os.path.isdir(path):
+				# Check if the resized image directory exists
+				re_path = os.path.join(current_app.root_path, 'static', 'picture_files', str(id), 'resized')
+				if os.path.isdir(re_path):
+					# Remove all files here
+					all_files = [f for f in listdir(re_path) if isfile(join(re_path, f))]
+					for file in all_files:
+						file_path = os.path.join(re_path, file)
+						os.remove(file_path)
+
+					# Remove the resized directory
+					os.rmdir(re_path)
+
+				# Remove all files in the image file directory
+				all_files = [f for f in listdir(path) if isfile(join(path, f))]
+				for file in all_files:
+					file_path = os.path.join(path, file)
+					os.remove(file_path)
+
+				# Remove the image file directory
+				os.rmdir(path)
+
+			# Remove the sessions of the device
+			sessions = devi.sessions
+			for sess in sessions:
+				db.session.delete(sess)
+
+			# Remove the settings of the device
 			db.session.delete(devi.settings)
+
+			# Remove the device
 			db.session.delete(devi)
+
+			# Commit
 			db.session.commit()
 
 			resp = jsonify(payload)
