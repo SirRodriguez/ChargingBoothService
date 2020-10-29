@@ -1,4 +1,5 @@
 from flask import Blueprint, request, jsonify
+from jsonschema import validate
 from CB_service import db, userManager
 from CB_service.models import Device
 from CB_service.settings.utils import resize_all_images
@@ -50,6 +51,40 @@ def update_device_settings(id_number, admin_key):
 			resp.status_code = 401
 			return resp
 			
+		# Json validation
+		schema = {
+			"type": "object",
+			"properties": {
+				"toggle_pay": {
+					"type": "boolean"
+				},
+				"price": {
+					"type": "number"
+				},
+				"charge_time": {
+					"type": "number"
+				},
+				"time_offset": {
+					"type": "string"
+				},
+				"location": {
+					"type": "string"
+				},
+				"aspect_ratio_width": {
+					"type": "number"
+				},
+				"aspect_ratio_height": {
+					"type": "number"
+				}
+			}
+		}
+		try:
+			validate(instance=request.json, schema=schema)
+		except:
+			resp = jsonify(payload)
+			resp.status_code = 400
+			return resp
+
 		devi = Device.query.filter_by(id_number=id_number).first()
 		if devi != None:
 
@@ -140,6 +175,40 @@ def update_settings(id, admin_key):
 		if not userManager.verify_key(admin_key):
 			resp = jsonify(payload)
 			resp.status_code = 401
+			return resp
+
+		# Json validation
+		schema = {
+			"type": "object",
+			"properties": {
+				"toggle_pay": {
+					"type": "boolean"
+				},
+				"price": {
+					"type": "number"
+				},
+				"charge_time": {
+					"type": "number"
+				},
+				"time_offset": {
+					"type": "string"
+				},
+				"location": {
+					"type": "string"
+				},
+				"aspect_ratio_width": {
+					"type": "number"
+				},
+				"aspect_ratio_height": {
+					"type": "number"
+				}
+			}
+		}
+		try:
+			validate(instance=request.json, schema=schema)
+		except:
+			resp = jsonify(payload)
+			resp.status_code = 400
 			return resp
 
 		devi = Device.query.get(id)

@@ -1,4 +1,5 @@
 from flask import Blueprint, request, jsonify
+from jsonschema import validate
 from CB_service import db, userManager
 from CB_service.models import Device, Session
 import datetime
@@ -15,6 +16,58 @@ sessions = Blueprint('sessions', __name__)
 def add_session(id_number):
 	payload = {}
 	if request.method == 'PUT':
+		# Json validation
+		schema = {
+			"type": "object",
+			"properties": {
+				"date_initiated_year": {
+					"type": "number"
+				},
+				"date_initiated_month": {
+					"type": "number"
+				},
+				"date_initiated_day": {
+					"type": "number"
+				},
+				"date_initiated_hour": {
+					"type": "number"
+				},
+				"date_initiated_minute": {
+					"type": "number"
+				},
+				"date_initiated_second": {
+					"type": "number"
+				},
+				"duration": {
+					"type": "number"
+				},
+				"power_used": {
+					"type": "number"
+				},
+				"amount_paid": {
+					"type":"number"
+				},
+				"location": {
+					"type": "string"
+				},
+				"port": {
+					"type": "string"
+				},
+				"increment_size": {
+					"type": "number"
+				},
+				"increments": {
+					"type": "number"
+				}
+			}
+		}
+		try:
+			validate(instance=request.json, schema=schema)
+		except:
+			resp = jsonify(payload)
+			resp.status_code = 400
+			return resp
+
 		devi = Device.query.filter_by(id_number=id_number).first()
 		if devi != None:
 			date_initiated=datetime.datetime(

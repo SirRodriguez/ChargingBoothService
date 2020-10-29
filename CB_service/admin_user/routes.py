@@ -1,4 +1,5 @@
 from flask import Blueprint, request, jsonify, render_template
+from jsonschema import validate
 from CB_service import userManager, db, bcrypt, resetLimiter
 from CB_service.models import User
 from CB_service.admin_user.forms import ResetPasswordForm
@@ -17,6 +18,26 @@ admin_user = Blueprint('admin_user', __name__)
 def verify_user():
 	payload = {}
 	if request.method == 'GET':
+		# Json validation
+		schema = {
+			"type": "object",
+			"properties": {
+				"username": {
+					"type": "string"
+				},
+				"password": {
+					"type": "string"
+				}
+			}
+		}
+		try:
+			validate(instance=request.json, schema=schema)
+		except:
+			resp = jsonify(payload)
+			resp.status_code = 400
+			return resp
+
+
 		username = request.json["username"]
 		password = request.json["password"]
 
@@ -66,6 +87,26 @@ def update_account(admin_key):
 			resp.status_code = 401
 			return resp
 
+		# Verify Json
+		# Json validation
+		schema = {
+			"type": "object",
+			"properties": {
+				"username": {
+					"type": "string"
+				},
+				"email": {
+					"type": "string"
+				}
+			}
+		}
+		try:
+			validate(instance=request.json, schema=schema)
+		except:
+			resp = jsonify(payload)
+			resp.status_code = 400
+			return resp
+
 		user = User.query.first()
 
 		user.username = request.json["username"]
@@ -91,6 +132,22 @@ def update_password(admin_key):
 		if not userManager.verify_key(admin_key):
 			resp = jsonify(payload)
 			resp.status_code = 401
+			return resp
+
+		# Json validation
+		schema = {
+			"type": "object",
+			"properties": {
+				"hashed_password": {
+					"type": "string"
+				}
+			}
+		}
+		try:
+			validate(instance=request.json, schema=schema)
+		except:
+			resp = jsonify(payload)
+			resp.status_code = 400
 			return resp
 
 		user = User.query.first()

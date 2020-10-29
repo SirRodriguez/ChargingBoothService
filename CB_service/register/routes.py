@@ -1,4 +1,5 @@
 from flask import Blueprint, request, jsonify
+from jsonschema import validate
 from CB_service import db, userManager
 from CB_service.models import Device, Settings
 import secrets
@@ -10,6 +11,25 @@ register = Blueprint('register', __name__)
 def register_device():
 	payload = {}
 	if request.method == 'GET':
+		# Json validation
+		schema = {
+			"type": "object",
+			"properties": {
+				"username": {
+					"type": "string"
+				},
+				"password": {
+					"type": "string"
+				}
+			}
+		}
+		try:
+			validate(instance=request.json, schema=schema)
+		except:
+			resp = jsonify(payload)
+			resp.status_code = 400
+			return resp
+
 		# User verification
 		username = request.json["username"]
 		password = request.json["password"]
