@@ -1,15 +1,18 @@
 from flask import current_app
 from datetime import datetime, timedelta
 from itsdangerous import TimedJSONWebSignatureSerializer as Serializer
-from CB_service import db, bcrypt
+from CB_service import db, bcrypt, mysql_host, mysql_user, mysql_password, mysql_database
 import secrets
 import threading
 import time
+import mysql.connector
 
 ##############
 ## Database ##
 ##############
 
+# Will only be used for tokens of reset password
+# Will not hold viable information
 class User(db.Model):
 	id = db.Column(db.Integer, primary_key=True)
 	username = db.Column(db.String(20), unique=True, nullable=False)
@@ -120,14 +123,44 @@ class UserManager():
 		self.admin_key = ""
 
 	def only_verify_user(self, username, password):
-		user = User.query.filter_by(username=username).first()
-		return user and bcrypt.check_password_hash(user.password, password)
+		mydb = mysql.connector.connect(
+			host=mysql_host,
+			user=mysql_user,
+			password=mysql_password,
+			database=mysql_database
+		)
+		mycursor = mydb.cursor()
+		sql = "SELECT * FROM user"
+		mycursor.execute(sql)
+		result = mycursor.fetchall()
+		user = result[0]
+
+		return user[1] == username and bcrypt.check_password_hash(user[3], password)
+
+		# user = User.query.filter_by(username=username).first()
+		# return user and bcrypt.check_password_hash(user.password, password)
 
 	def verify_user(self, username, password):
-		user = User.query.filter_by(username=username).first()
-		if user and bcrypt.check_password_hash(user.password, password):
+		mydb = mysql.connector.connect(
+			host=mysql_host,
+			user=mysql_user,
+			password=mysql_password,
+			database=mysql_database
+		)
+		mycursor = mydb.cursor()
+		sql = "SELECT * FROM user"
+		mycursor.execute(sql)
+		result = mycursor.fetchall()
+		user = result[0]
+
+		if user[1] == username and bcrypt.check_password_hash(user[3], password):
 			return self.create_admin_key()
 		return None
+
+		# user = User.query.filter_by(username=username).first()
+		# if user and bcrypt.check_password_hash(user.password, password):
+		# 	return self.create_admin_key()
+		# return None
 
 	def verify_key(self, key):
 		if key == "":

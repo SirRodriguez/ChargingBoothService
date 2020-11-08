@@ -1,9 +1,10 @@
 from flask import Blueprint, request, jsonify, render_template
 from jsonschema import validate
-from CB_service import userManager, db, bcrypt, resetLimiter
+from CB_service import userManager, db, bcrypt, resetLimiter, mysql_host, mysql_user, mysql_password, mysql_database
 from CB_service.models import User
 from CB_service.admin_user.forms import ResetPasswordForm
 from CB_service.admin_user.utils import send_reset_email
+import mysql.connector
 
 admin_user = Blueprint('admin_user', __name__)
 
@@ -64,10 +65,21 @@ def account_info(admin_key):
 			resp.status_code = 401
 			return resp
 
-		user = User.query.first()
+		mydb = mysql.connector.connect(
+			host=mysql_host,
+			user=mysql_user,
+			password=mysql_password,
+			database=mysql_database
+		)
 
-		payload["username"] = user.username
-		payload["email"] = user.email
+		mycursor = mydb.cursor()
+		sql = "SELECT * FROM user"
+		mycursor.execute(sql)
+		result = mycursor.fetchall()
+		user = result[0]
+
+		payload["username"] = user[1]
+		payload["email"] = user[2]
 
 		resp = jsonify(payload)
 		resp.status_code = 200
@@ -107,12 +119,19 @@ def update_account(admin_key):
 			resp.status_code = 400
 			return resp
 
-		user = User.query.first()
+		mydb = mysql.connector.connect(
+			host=mysql_host,
+			user=mysql_user,
+			password=mysql_password,
+			database=mysql_database
+		)
+		mycursor = mydb.cursor()
+		sql = "UPDATE user SET username = %s, email = %s WHERE id = 1"
+		val = (request.json["username"], request.json["email"])
 
-		user.username = request.json["username"]
-		user.email = request.json["email"]
+		mycursor.execute(sql, val)
 
-		db.session.commit()
+		mydb.commit()
 
 		resp = jsonify(payload)
 		resp.status_code = 200
@@ -150,11 +169,19 @@ def update_password(admin_key):
 			resp.status_code = 400
 			return resp
 
-		user = User.query.first()
+		mydb = mysql.connector.connect(
+			host=mysql_host,
+			user=mysql_user,
+			password=mysql_password,
+			database=mysql_database
+		)
+		mycursor = mydb.cursor()
+		sql = "UPDATE user SET password = %s WHERE id = %s"
+		val = (request.json["hashed_password"], 1)
 
-		user.password = request.json["hashed_password"]
+		mycursor.execute(sql, val)
 
-		db.session.commit()
+		mydb.commit()
 
 		resp = jsonify(payload)
 		resp.status_code = 200
@@ -184,7 +211,18 @@ def logout():
 def reset_password():
 	if not resetLimiter.reached_limit():
 		resetLimiter.add_count()
-		user = User.query.first()
+		mydb = mysql.connector.connect(
+			host=mysql_host,
+			user=mysql_user,
+			password=mysql_password,
+			database=mysql_database
+		)
+		mycursor = mydb.cursor()
+		sql = "SELECT * FROM user"
+		mycursor.execute(sql)
+		result = mycursor.fetchall()
+		user = result[0]
+
 		send_reset_email(user=user)
 
 	return render_template('reset_password.html')
@@ -192,16 +230,24 @@ def reset_password():
 @admin_user.route("/reset_token/<token>", methods=['GET', 'POST'])
 def reset_token(token):
 	# Verify token
-	user = User.verify_reset_token(token)
-	if user is None:
+	local_user = User.verify_reset_token(token)
+	if local_user is None:
 		return render_template('token_denied.html')
 
 	form = ResetPasswordForm()
 	if form.validate_on_submit():
-		user = User.query.first()
-		user.password = bcrypt.generate_password_hash(form.password.data).decode('utf-8')
-
-		db.session.commit()
+		mydb = mysql.connector.connect(
+			host=mysql_host,
+			user=mysql_user,
+			password=mysql_password,
+			database=mysql_database
+		)
+		mycursor = mydb.cursor()
+		sql = "UPDATE user SET password = %s WHERE id = %s"
+		val = (bcrypt.generate_password_hash(form.password.data).decode('utf-8'), 1)
+		mycursor.execute(sql, val)
+		
+		mydb.commit()
 
 		return render_template('reset_done.html')
 	return render_template('reset_token.html', form=form)

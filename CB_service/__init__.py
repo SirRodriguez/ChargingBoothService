@@ -3,10 +3,24 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_bcrypt import Bcrypt
 from flask_mail import Mail
 from CB_service.config import Config
+# import mysql.connector
 
 db = SQLAlchemy()
 bcrypt = Bcrypt()
 mail = Mail()
+
+# MYSQL database
+# mydb = mysql.connector.connect(
+# 	host='localhost',
+# 	user='root',
+# 	password='CRodPass@123',
+# 	database='charging_booth_database'
+# )
+mysql_host = 'localhost'
+mysql_user = 'root'
+mysql_password = 'CRodPass@123'
+mysql_database = 'charging_booth_database'
+
 
 from CB_service.models import UserManager, ResetLimiter
 userManager = UserManager()
