@@ -1,8 +1,9 @@
 from flask import Blueprint, request, jsonify
 from jsonschema import validate
-from CB_service import db, userManager
+from CB_service import db, userManager, mysql_host, mysql_user, mysql_password, mysql_database
 from CB_service.models import Device, Settings
 import secrets
+import mysql.connector
 
 register = Blueprint('register', __name__)
 
@@ -38,24 +39,37 @@ def register_device():
 			resp.status_code = 401
 			return resp
 
+		mydb = mysql.connector.connect(
+			host=mysql_host,
+			user=mysql_user,
+			password=mysql_password,
+			database=mysql_database
+		)
+		mycursor = mydb.cursor()
+
+
 
 		# Create a random hex that will be used to 
 		# keep track of what device is being talked to
 		random_hex = secrets.token_hex(25)
 
 		# Add device to the database
-		devi = Device(id_number=random_hex)
-		db.session.add(devi)
-		db.session.commit()
+		sql = "INSERT INTO device (id_number) VALUES ('" + random_hex + "')"
+		mycursor.execute(sql)
+		mydb.commit()
 
 		# Grab the device from database for info
-		db_device = Device.query.filter_by(id_number=random_hex).first()
-		device_id = str(db_device.id)
+		sql = "SELECT * FROM device WHERE id_number = '" + random_hex + "'"
+		mycursor.execute(sql)
+		result = mycursor.fetchall()
+		device = result[0]
+		device_id = device[0]
 
 		# Add settings to data base for corresponding device
-		sett = Settings(location=device_id, host=db_device)
-		db.session.add(sett)
-		db.session.commit()
+		sql = "INSERT INTO settings (location) VALUES ('" + str(device_id) + "')"
+		mycursor.execute(sql)
+
+		mydb.commit()
 
 		# Describe the device currently added
 		payload["device_id"] = random_hex
@@ -75,8 +89,18 @@ def register_device():
 def is_registered(id_number):
 	payload = {}
 	if request.method == 'GET':
-		devi = Device.query.filter_by(id_number=id_number).first()
-		if devi == None:
+		mydb = mysql.connector.connect(
+			host=mysql_host,
+			user=mysql_user,
+			password=mysql_password,
+			database=mysql_database
+		)
+		mycursor = mydb.cursor()
+		sql = "SELECT * FROM device WHERE id_number = %s%s"
+		val = (id_number, '')
+		mycursor.execute(sql, val)
+		result = mycursor.fetchall()
+		if len(result) == 0:
 			payload["registered"] = False
 		else:
 			payload["registered"] = True
