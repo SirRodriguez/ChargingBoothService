@@ -1,10 +1,11 @@
 from flask import Blueprint, request, jsonify, current_app, send_from_directory
-from CB_service import db, userManager
+from CB_service import db, userManager, mysql_host, mysql_user, mysql_password, mysql_database
 from CB_service.models import Device
 from CB_service.images.utils import resize_image
 import os
 from os import listdir
 from os.path import isfile, join
+import mysql.connector
 
 images = Blueprint('images', __name__)
 
@@ -17,11 +18,25 @@ images = Blueprint('images', __name__)
 def get_image_count(id_number):
 	payload = {}
 	if request.method == 'GET':
-		devi = Device.query.filter_by(id_number=id_number).first()
-		if devi != None:
+		mydb = mysql.connector.connect(
+			host=mysql_host,
+			user=mysql_user,
+			password=mysql_password,
+			database=mysql_database
+		)
+		mycursor = mydb.cursor()
+
+		# Grab device
+		sql = "SELECT * FROM device WHERE id_number = %s"
+		val = (id_number,)
+		mycursor.execute(sql,val)
+		result = mycursor.fetchall()
+
+		if len(result) > 0:
 			payload["registered"] = True
 
-			id = devi.id
+			devi = result[0]
+			id = devi[0]
 			path = os.path.join(current_app.root_path, 'static', 'picture_files', str(id))
 			count = 0
 			if os.path.isdir(path): # If no directory, send 0
@@ -31,15 +46,21 @@ def get_image_count(id_number):
 
 			payload["image_count"] = count
 
+			# Grab settings
+			sql = "SELECT * FROM settings WHERE id = " + str(id)
+			mycursor.execute(sql)
+			result = mycursor.fetchall()
+			devi_settings = result[0]
+
 			# Add the settings to the payload as well
 			settings = {}
-			settings["toggle_pay"] = devi.settings.toggle_pay
-			settings["price"] = devi.settings.price
-			settings["charge_time"] = devi.settings.charge_time
-			settings["time_offset"] = devi.settings.time_offset
-			settings["location"] = devi.settings.location
-			settings["aspect_ratio_width"] = devi.settings.aspect_ratio_width
-			settings["aspect_ratio_height"] = devi.settings.aspect_ratio_height
+			settings["toggle_pay"] = devi_settings[1]
+			settings["price"] = devi_settings[2]
+			settings["charge_time"] = devi_settings[3]
+			settings["time_offset"] = devi_settings[4]
+			settings["location"] = devi_settings[5]
+			settings["aspect_ratio_width"] = devi_settings[6]
+			settings["aspect_ratio_height"] = devi_settings[7]
 
 			payload["settings"] = settings
 
@@ -62,11 +83,23 @@ def get_image_count(id_number):
 def grab_device_image(id_number, img_num, random_hex):
 	payload = {}
 	if request.method == 'GET':
+		mydb = mysql.connector.connect(
+			host=mysql_host,
+			user=mysql_user,
+			password=mysql_password,
+			database=mysql_database
+		)
+		mycursor = mydb.cursor()
 
-		devi = Device.query.filter_by(id_number=id_number).first()
+		# Grab device
+		sql = "SELECT * FROM device WHERE id_number = %s"
+		val = (id_number,)
+		mycursor.execute(sql,val)
+		result = mycursor.fetchall()
 
-		if devi != None:
-			id = devi.id
+		if len(result) > 0:
+			devi = result[0]
+			id = devi[0]
 
 			path = os.path.join(current_app.root_path, 'static', 'picture_files', str(id))
 
@@ -99,11 +132,23 @@ def grab_device_image(id_number, img_num, random_hex):
 def grab_resized_image(id_number, img_num, random_hex):
 	payload = {}
 	if request.method == 'GET':
+		mydb = mysql.connector.connect(
+			host=mysql_host,
+			user=mysql_user,
+			password=mysql_password,
+			database=mysql_database
+		)
+		mycursor = mydb.cursor()
 
-		devi = Device.query.filter_by(id_number=id_number).first()
+		# Grab device
+		sql = "SELECT * FROM device WHERE id_number = %s"
+		val = (id_number,)
+		mycursor.execute(sql,val)
+		result = mycursor.fetchall()
 
-		if devi != None:
-			id = devi.id
+		if len(result) > 0:
+			devi = result[0]
+			id = devi[0]
 
 			path = os.path.join(current_app.root_path, 'static', 'picture_files', str(id), 'resized')
 
@@ -142,13 +187,33 @@ def upload_device_images(id_number, admin_key):
 			resp.status_code = 401
 			return resp
 
-		devi = Device.query.filter_by(id_number=id_number).first()
-		if devi != None:
+		mydb = mysql.connector.connect(
+			host=mysql_host,
+			user=mysql_user,
+			password=mysql_password,
+			database=mysql_database
+		)
+		mycursor = mydb.cursor()
 
-			id = devi.id
+		# Grab device
+		sql = "SELECT * FROM device WHERE id_number = %s"
+		val = (id_number,)
+		mycursor.execute(sql,val)
+		result = mycursor.fetchall()
+
+		if len(result) > 0:
+			devi = result[0]
+			id = devi[0]
+
+			# Grab settings
+			sql = "SELECT * FROM settings WHERE id = " + str(id)
+			mycursor.execute(sql)
+			result = mycursor.fetchall()
+			devi_settings = result[0]
+
 			# From settings get ration width and height
-			ratio_width = devi.settings.aspect_ratio_width
-			ratio_height = devi.settings.aspect_ratio_height
+			ratio_width = devi_settings[6]
+			ratio_height = devi_settings[7]
 
 			# Check if directory exists for device images
 			path = os.path.join(current_app.root_path, 'static', 'picture_files', str(id))
@@ -207,10 +272,23 @@ def remove_device_images(id_number, removals, admin_key):
 			resp.status_code = 401
 			return resp
 
-		devi = Device.query.filter_by(id_number=id_number).first()
+		mydb = mysql.connector.connect(
+			host=mysql_host,
+			user=mysql_user,
+			password=mysql_password,
+			database=mysql_database
+		)
+		mycursor = mydb.cursor()
 
-		if devi != None:
-			id = devi.id
+		# Grab device
+		sql = "SELECT * FROM device WHERE id_number = %s"
+		val = (id_number,)
+		mycursor.execute(sql,val)
+		result = mycursor.fetchall()
+
+		if len(result) > 0:
+			devi = result[0]
+			id = devi[0]
 
 			path = os.path.join(current_app.root_path, 'static', 'picture_files', str(id))
 			re_path = os.path.join(current_app.root_path, 'static', 'picture_files', str(id), 'resized')
@@ -282,12 +360,29 @@ def device_location_img_count(id, admin_key):
 			resp.status_code = 401
 			return resp
 
-		devi = Device.query.get(id)
+		mydb = mysql.connector.connect(
+			host=mysql_host,
+			user=mysql_user,
+			password=mysql_password,
+			database=mysql_database
+		)
+		mycursor = mydb.cursor()
 
-		if devi != None:
+		# Grab device
+		sql = "SELECT * FROM device WHERE id = %s"
+		val = (str(id),)
+		mycursor.execute(sql,val)
+		result = mycursor.fetchall()
+
+		if len(result) > 0:
+			# Grab the settings
+			sql = "SELECT * FROM settings WHERE id = " + str(id)
+			mycursor.execute(sql)
+			result = mycursor.fetchall()
+
 			# Put the location from settings
-			if(devi.settings != None):
-				payload["location"] = devi.settings.location
+			if len(result) > 0:
+				payload["location"] = result[0][5]
 			else:
 				payload["location"] = "No Settings"
 
@@ -323,9 +418,21 @@ def device_img_count(id, admin_key):
 			resp.status_code = 401
 			return resp
 
-		devi = Device.query.get(id)
+		mydb = mysql.connector.connect(
+			host=mysql_host,
+			user=mysql_user,
+			password=mysql_password,
+			database=mysql_database
+		)
+		mycursor = mydb.cursor()
 
-		if devi != None:
+		# Grab device
+		sql = "SELECT * FROM device WHERE id = %s"
+		val = (str(id),)
+		mycursor.execute(sql,val)
+		result = mycursor.fetchall()
+
+		if len(result) > 0:
 			# Grab image count
 			path = os.path.join(current_app.root_path, 'static', 'picture_files', str(id))
 			count = 0
@@ -449,12 +556,30 @@ def upload_images(id, admin_key):
 			resp.status_code = 401
 			return resp
 			
-		devi = Device.query.get(id)
+		mydb = mysql.connector.connect(
+			host=mysql_host,
+			user=mysql_user,
+			password=mysql_password,
+			database=mysql_database
+		)
+		mycursor = mydb.cursor()
 
-		if devi != None:
+		# Grab device
+		sql = "SELECT * FROM device WHERE id = %s"
+		val = (str(id),)
+		mycursor.execute(sql,val)
+		result = mycursor.fetchall()
+
+		if len(result) > 0:
+			# Grab settings
+			sql = "SELECT * FROM settings WHERE id = " + str(id)
+			mycursor.execute(sql)
+			result = mycursor.fetchall()
+			devi_settings = result[0]
+
 			# From settings get ration width and height
-			ratio_width = devi.settings.aspect_ratio_width
-			ratio_height = devi.settings.aspect_ratio_height
+			ratio_width = devi_settings[6]
+			ratio_height = devi_settings[7]
 
 			# Check if directory exists for device images
 			path = os.path.join(current_app.root_path, 'static', 'picture_files', str(id))
