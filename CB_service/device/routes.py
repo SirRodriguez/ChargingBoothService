@@ -1,9 +1,10 @@
 from flask import Blueprint, request, jsonify, current_app
-from CB_service import db, userManager
+from CB_service import db, userManager, mysql_host, mysql_user, mysql_password, mysql_database
 from CB_service.models import Device, Session
 import os
 from os import listdir
 from os.path import isfile, join
+import mysql.connector
 
 device = Blueprint('device', __name__)
 
@@ -17,17 +18,37 @@ def all_devices(admin_key):
 			resp.status_code = 401
 			return resp
 
-		all_devices = Device.query.order_by(Device.id.asc())
+		mydb = mysql.connector.connect(
+			host=mysql_host,
+			user=mysql_user,
+			password=mysql_password,
+			database=mysql_database
+		)
+		mycursor = mydb.cursor()
+
+		# Grab all devices from database
+		sql = "SELECT * FROM device"
+		mycursor.execute(sql)
+		all_devices = mycursor.fetchall()
+
 
 		list_id = []
 		list_location = []
 		count = 0
 		for devi in all_devices:
-			list_id.append(devi.id)
-			if(devi.settings != None):
-				list_location.append(devi.settings.location)
+			# list_id.append(devi.id)
+			list_id.append(devi[0])
+
+			# Grab the device settings
+			sql = "SELECT * FROM settings WHERE id = " + str(devi[0])
+			mycursor.execute(sql)
+			result = mycursor.fetchall()
+			if len(result) > 0:
+				settings = result[0]
+				list_location.append(settings[5])
 			else:
 				list_location.append("No Settings")
+
 			count += 1
 
 		payload["device_id"] = list_id
@@ -43,6 +64,7 @@ def all_devices(admin_key):
 		return resp
 
 # Site
+# Need to tast if removing the device and settings still correctly correspond to each other
 @device.route("/site/remove_device/<int:id>/<string:admin_key>", methods=['DELETE'])
 def remove_device(id, admin_key):
 	payload = {}
@@ -53,10 +75,24 @@ def remove_device(id, admin_key):
 			resp.status_code = 401
 			return resp
 
-		devi = Device.query.get(id)
-		if devi != None:
-			payload["deleted_id"] = devi.id
-			payload["deleted_num"] = devi.id_number
+		mydb = mysql.connector.connect(
+			host=mysql_host,
+			user=mysql_user,
+			password=mysql_password,
+			database=mysql_database
+		)
+		mycursor = mydb.cursor()
+
+		# Grab the device
+		sql = "SELECT * FROM device WHERE id = " + str(id)
+		mycursor.execute(sql)
+		result = mycursor.fetchall()
+
+		if len(result) > 0:
+			devi = result[0]
+
+			payload["deleted_id"] = devi[0]
+			payload["deleted_num"] = devi[1]
 
 			# Remove all the images that go along with it
 			# -----
@@ -85,18 +121,19 @@ def remove_device(id, admin_key):
 				os.rmdir(path)
 
 			# Remove the sessions of the device
-			sessions = devi.sessions
-			for sess in sessions:
-				db.session.delete(sess)
+			sql = "DELETE FROM session WHERE host_id = " + str(id)
+			mycursor.execute(sql)
 
 			# Remove the settings of the device
-			db.session.delete(devi.settings)
+			sql = "DELETE FROM settings WHERE id = " + str(id)
+			mycursor.execute(sql)
 
 			# Remove the device
-			db.session.delete(devi)
+			sql = "DELETE FROM device WHERE id = " + str(id)
+			mycursor.execute(sql)
 
 			# Commit
-			db.session.commit()
+			mydb.commit()
 
 			resp = jsonify(payload)
 			resp.status_code = 204
@@ -122,11 +159,26 @@ def device_location(id, admin_key):
 			resp.status_code = 401
 			return resp
 
-		devi = Device.query.get(id)
+		mydb = mysql.connector.connect(
+			host=mysql_host,
+			user=mysql_user,
+			password=mysql_password,
+			database=mysql_database
+		)
+		mycursor = mydb.cursor()
 
-		if devi != None:
-			if(devi.settings != None):
-				payload["location"] = devi.settings.location
+		sql = "SELECT * FROM device WHERE id = " + str(id)
+		mycursor.execute(sql)
+		result = mycursor.fetchall()
+
+		if len(result) > 0:
+			# Grab the settings
+			sql = "SELECT * FROM settings WHERE id = " + str(id)
+			mycursor.execute(sql)
+			result = mycursor.fetchall()
+
+			if len(result) > 0:
+				payload["location"] = result[0][5]
 			else:
 				payload["location"] = "No Settings"
 
