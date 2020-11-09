@@ -96,8 +96,8 @@ def is_registered(id_number):
 			database=mysql_database
 		)
 		mycursor = mydb.cursor()
-		sql = "SELECT * FROM device WHERE id_number = %s%s"
-		val = (id_number, '')
+		sql = "SELECT * FROM device WHERE id_number = %s"
+		val = (id_number,)
 		mycursor.execute(sql, val)
 		result = mycursor.fetchall()
 		if len(result) == 0:

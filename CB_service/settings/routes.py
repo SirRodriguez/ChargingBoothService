@@ -1,8 +1,9 @@
 from flask import Blueprint, request, jsonify
 from jsonschema import validate
-from CB_service import db, userManager
+from CB_service import db, userManager, mysql_host, mysql_user, mysql_password, mysql_database
 from CB_service.models import Device
 from CB_service.settings.utils import resize_all_images
+import mysql.connector
 
 settings = Blueprint('settings', __name__)
 
@@ -16,17 +17,38 @@ settings = Blueprint('settings', __name__)
 def get_device_settings(id_number):
 	payload = {}
 	if request.method == 'GET':
-		devi = Device.query.filter_by(id_number=id_number).first()
-		if devi != None:
+		mydb = mysql.connector.connect(
+			host=mysql_host,
+			user=mysql_user,
+			password=mysql_password,
+			database=mysql_database
+		)
+		mycursor = mydb.cursor()
+
+		sql = "SELECT * FROM device WHERE id_number = %s"
+		val = (id_number,)
+		mycursor.execute(sql,val)
+		result = mycursor.fetchall()
+
+		if len(result) > 0:
 			payload["registered"] = True
 
-			payload["toggle_pay"] = devi.settings.toggle_pay
-			payload["price"] = devi.settings.price
-			payload["charge_time"] = devi.settings.charge_time
-			payload["time_offset"] = devi.settings.time_offset
-			payload["location"] = devi.settings.location
-			payload["aspect_ratio_width"] = devi.settings.aspect_ratio_width
-			payload["aspect_ratio_height"] = devi.settings.aspect_ratio_height
+			device_id = result[0][0]
+
+			# Grab the settings
+			sql = "SELECT * FROM settings WHERE id = " + str(device_id)
+			mycursor.execute(sql)
+			result = mycursor.fetchall()
+			settings = result[0]
+
+
+			payload["toggle_pay"] = settings[1]
+			payload["price"] = settings[2]
+			payload["charge_time"] = settings[3]
+			payload["time_offset"] = settings[4]
+			payload["location"] = settings[5]
+			payload["aspect_ratio_width"] = settings[6]
+			payload["aspect_ratio_height"] = settings[7]
 
 			resp = jsonify(payload)
 			resp.status_code = 200
@@ -85,27 +107,54 @@ def update_device_settings(id_number, admin_key):
 			resp.status_code = 400
 			return resp
 
-		devi = Device.query.filter_by(id_number=id_number).first()
-		if devi != None:
+		mydb = mysql.connector.connect(
+			host=mysql_host,
+			user=mysql_user,
+			password=mysql_password,
+			database=mysql_database
+		)
+		mycursor = mydb.cursor()
+
+		sql = "SELECT * FROM device WHERE id_number = %s"
+		val = (id_number,)
+		mycursor.execute(sql,val)
+		result = mycursor.fetchall()
+
+		if len(result) > 0:
+			devi = result[0]
+			id = devi[0]
+
+			# Grab the settings
+			sql = "SELECT * FROM settings WHERE id = " + str(id)
+			mycursor.execute(sql)
+			result = mycursor.fetchall()
+			settings = result[0]
 
 			# Check if aspect ration is different so that it can resize all images
 			resize = False
-			if devi.settings.aspect_ratio_width != float(request.json["aspect_ratio_width"]) or \
-				devi.settings.aspect_ratio_height != float(request.json["aspect_ratio_height"]):
+			if settings[6] != float(request.json["aspect_ratio_width"]) or \
+				settings[7] != float(request.json["aspect_ratio_height"]):
 				resize = True
 
-			devi.settings.toggle_pay = request.json["toggle_pay"]
-			devi.settings.price = request.json["price"]
-			devi.settings.charge_time = request.json["charge_time"]
-			devi.settings.time_offset = request.json["time_offset"]
-			devi.settings.location = request.json["location"]
-			devi.settings.aspect_ratio_width = request.json["aspect_ratio_width"]
-			devi.settings.aspect_ratio_height = request.json["aspect_ratio_height"]
+			# Update settings
+			sql = "UPDATE settings SET toggle_pay = %s, price = %s, charge_time = %s, time_offset = %s, location = %s, aspect_ratio_width = %s, aspect_ratio_height = %s WHERE id = %s"
+			val = (
+				request.json["toggle_pay"], 
+				request.json["price"], 
+				request.json["charge_time"], 
+				request.json["time_offset"], 
+				request.json["location"], 
+				request.json["aspect_ratio_width"], 
+				request.json["aspect_ratio_height"],
+				id
+			)
+			mycursor.execute(sql, val)
 
 			if resize:
-				resize_all_images(devi.settings.aspect_ratio_width, devi.settings.aspect_ratio_height, devi.id)
+				device_id = result[0][0]
+				resize_all_images(settings[6], settings[7], device_id)
 
-			db.session.commit()
+			mydb.commit()
 
 			resp = jsonify(payload)
 			resp.status_code = 200
@@ -135,17 +184,33 @@ def device_settings(id, admin_key):
 			resp.status_code = 401
 			return resp
 
-		devi = Device.query.get(id)
+		mydb = mysql.connector.connect(
+			host=mysql_host,
+			user=mysql_user,
+			password=mysql_password,
+			database=mysql_database
+		)
+		mycursor = mydb.cursor()
 
-		if devi != None:
-			if(devi.settings != None):
-				payload["toggle_pay"] = devi.settings.toggle_pay
-				payload["price"] = devi.settings.price
-				payload["charge_time"] = devi.settings.charge_time
-				payload["time_offset"] = devi.settings.time_offset
-				payload["location"] = devi.settings.location
-				payload["aspect_ratio_width"] = devi.settings.aspect_ratio_width
-				payload["aspect_ratio_height"] = devi.settings.aspect_ratio_height
+		sql = "SELECT * FROM device WHERE id = " + str(id)
+		mycursor.execute(sql)
+		result = mycursor.fetchall()
+
+		if len(result) > 0:
+			# Grab the settings
+			sql = "SELECT * FROM settings WHERE id = " + str(id)
+			mycursor.execute(sql)
+			result = mycursor.fetchall()
+
+			if len(result) > 0:
+				settings = result[0]
+				payload["toggle_pay"] = settings[1]
+				payload["price"] = settings[2]
+				payload["charge_time"] = settings[3]
+				payload["time_offset"] = settings[4]
+				payload["location"] = settings[5]
+				payload["aspect_ratio_width"] = settings[6]
+				payload["aspect_ratio_height"] = settings[7]
 
 				resp = jsonify(payload)
 				resp.status_code = 200
@@ -211,27 +276,49 @@ def update_settings(id, admin_key):
 			resp.status_code = 400
 			return resp
 
-		devi = Device.query.get(id)
-		if devi != None:
+		mydb = mysql.connector.connect(
+			host=mysql_host,
+			user=mysql_user,
+			password=mysql_password,
+			database=mysql_database
+		)
+		mycursor = mydb.cursor()
+
+		sql = "SELECT * FROM device WHERE id = " + str(id)
+		mycursor.execute(sql)
+		result = mycursor.fetchall()
+
+		if len(result) > 0:
+			# Grab the settings
+			sql = "SELECT * FROM settings WHERE id = " + str(id)
+			mycursor.execute(sql)
+			result = mycursor.fetchall()
+			settings = result[0]
 
 			# Check if aspect ration is different so that it can resize all images
 			resize = False
-			if devi.settings.aspect_ratio_width != float(request.json["aspect_ratio_width"]) or \
-				devi.settings.aspect_ratio_height != float(request.json["aspect_ratio_height"]):
+			if settings[6] != float(request.json["aspect_ratio_width"]) or \
+				settings[7] != float(request.json["aspect_ratio_height"]):
 				resize = True
 
-			devi.settings.toggle_pay = request.json["toggle_pay"]
-			devi.settings.price = request.json["price"]
-			devi.settings.charge_time = request.json["charge_time"]
-			devi.settings.time_offset = request.json["time_offset"]
-			devi.settings.location = request.json["location"]
-			devi.settings.aspect_ratio_width = request.json["aspect_ratio_width"]
-			devi.settings.aspect_ratio_height = request.json["aspect_ratio_height"]
+			# Update settings
+			sql = "UPDATE settings SET toggle_pay = %s, price = %s, charge_time = %s, time_offset = %s, location = %s, aspect_ratio_width = %s, aspect_ratio_height = %s WHERE id = %s"
+			val = (
+				request.json["toggle_pay"], 
+				request.json["price"], 
+				request.json["charge_time"], 
+				request.json["time_offset"], 
+				request.json["location"], 
+				request.json["aspect_ratio_width"], 
+				request.json["aspect_ratio_height"],
+				id
+			)
+			mycursor.execute(sql, val)
 
 			if resize:
-				resize_all_images(devi.settings.aspect_ratio_width, devi.settings.aspect_ratio_height, devi.id)
+				resize_all_images(settings[6], settings[7], id)
 
-			db.session.commit()
+			mydb.commit()
 
 			resp = jsonify(payload)
 			resp.status_code = 200
