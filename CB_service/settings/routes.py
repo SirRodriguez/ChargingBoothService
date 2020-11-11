@@ -152,7 +152,7 @@ def update_device_settings(id_number, admin_key):
 
 			if resize:
 				device_id = result[0][0]
-				resize_all_images(settings[6], settings[7], device_id)
+				resize_all_images(request.json["aspect_ratio_width"], request.json["aspect_ratio_height"], device_id)
 
 			mydb.commit()
 

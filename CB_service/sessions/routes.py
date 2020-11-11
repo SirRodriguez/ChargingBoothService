@@ -1,8 +1,10 @@
 from flask import Blueprint, request, jsonify
 from jsonschema import validate
-from CB_service import db, userManager
+from CB_service import db, userManager, mysql_host, mysql_user, mysql_password, mysql_database
 from CB_service.models import Device, Session
+from CB_service.sessions.utils import ceildiv, get_iter_pages
 import datetime
+import mysql.connector
 
 sessions = Blueprint('sessions', __name__)
 
@@ -68,8 +70,23 @@ def add_session(id_number):
 			resp.status_code = 400
 			return resp
 
-		devi = Device.query.filter_by(id_number=id_number).first()
-		if devi != None:
+		mydb = mysql.connector.connect(
+			host=mysql_host,
+			user=mysql_user,
+			password=mysql_password,
+			database=mysql_database
+		)
+		mycursor = mydb.cursor()
+
+		sql = "SELECT * FROM device WHERE id_number = %s"
+		val = (id_number,)
+		mycursor.execute(sql,val)
+		result = mycursor.fetchall()
+
+		# if devi != None:
+		if len(result) > 0:
+			device_id = result[0][0]
+
 			date_initiated=datetime.datetime(
 				year=request.json["date_initiated_year"],
 				month=request.json["date_initiated_month"],
@@ -79,20 +96,21 @@ def add_session(id_number):
 				second=request.json["date_initiated_second"]
 				)
 
-			session = Session(
-				duration=request.json["duration"],
-				power_used=request.json["power_used"],
-				amount_paid=request.json["amount_paid"],
-				date_initiated=date_initiated,
-				location=request.json["location"],
-				port=request.json["port"],
-				increment_size=request.json["increment_size"],
-				increments=request.json["increments"],
-				host=devi
-				)
-
-			db.session.add(session)
-			db.session.commit()
+			# Add a session to the DB
+			sql = "INSERT INTO session (duration, power_used, amount_paid, date_initiated, location, port, increment_size, increments, host_id) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)"
+			val = (
+				request.json["duration"], 
+				request.json["power_used"], 
+				request.json["amount_paid"], 
+				date_initiated, 
+				request.json["location"], 
+				request.json["port"], 
+				request.json["increment_size"], 
+				request.json["increments"], 
+				device_id
+			)
+			mycursor.execute(sql, val)
+			mydb.commit()
 
 			resp = jsonify(payload)
 			resp.status_code = 200
@@ -106,8 +124,11 @@ def add_session(id_number):
 		resp.status_code = 405
 		return resp
 
+# Could use more testing
 @sessions.route("/device/sessions/<string:id_number>/<int:page>/<string:admin_key>")
 def get_deivce_sessions(id_number, page, admin_key):
+	items_per_page = 25
+
 	payload = {}
 	if request.method == 'GET':
 		if not userManager.verify_key(admin_key):
@@ -115,55 +136,84 @@ def get_deivce_sessions(id_number, page, admin_key):
 			resp.status_code = 401
 			return resp
 
-		devi = Device.query.filter_by(id_number=id_number).first()
-		if devi != None:
+		mydb = mysql.connector.connect(
+			host=mysql_host,
+			user=mysql_user,
+			password=mysql_password,
+			database=mysql_database
+		)
+		mycursor = mydb.cursor()
+
+		sql = "SELECT * FROM device WHERE id_number = %s"
+		val = (id_number,)
+		mycursor.execute(sql,val)
+		result = mycursor.fetchall()
+
+		if len(result) > 0:
 			payload["registered"] = True
 
-			sessions = Session.query.filter_by(host=devi)\
-				.order_by(Session.date_initiated.desc())\
-				.paginate(page=page, per_page=10)
+			device_id = result[0][0]
+
+			# Get the number of rows in sessions
+			sql = "SELECT COUNT(*) FROM session"
+			mycursor.execute(sql)
+			result = mycursor.fetchall()
+			num_of_sessions = result[0][0]
+			num_pages = ceildiv(num_of_sessions, items_per_page)
+
+			# Grab the sessions
+			offset = (page - 1) * items_per_page
+			sql = "SELECT * FROM session WHERE host_id = %s ORDER BY date_initiated LIMIT %s OFFSET %s"
+			val = (device_id, items_per_page, offset)
+			mycursor.execute(sql, val)
+			result = mycursor.fetchall()
 
 			payload["sessions"] = []
 			payload["iter_pages"] = []
 
-			for sess in sessions.items:
+			for sess in result:
 				sess_items = {}
-				sess_items["id"] = sess.id
+				sess_items["id"] = sess[0]
 
-				sess_items["duration"] = sess.duration
-				sess_items["power_used"] = sess.power_used
-				sess_items["amount_paid"] = sess.amount_paid
+				sess_items["duration"] = sess[1]
+				sess_items["power_used"] = sess[2]
+				sess_items["amount_paid"] = sess[3]
 
-				sess_items["date_initiated_year"] = sess.date_initiated.year
-				sess_items["date_initiated_month"] = sess.date_initiated.month
-				sess_items["date_initiated_day"] = sess.date_initiated.day
-				sess_items["date_initiated_hour"] = sess.date_initiated.hour
-				sess_items["date_initiated_minute"] = sess.date_initiated.minute
-				sess_items["date_initiated_second"] = sess.date_initiated.second
+				sess_items["date_initiated_year"] = sess[4].year
+				sess_items["date_initiated_month"] = sess[4].month
+				sess_items["date_initiated_day"] = sess[4].day
+				sess_items["date_initiated_hour"] = sess[4].hour
+				sess_items["date_initiated_minute"] = sess[4].minute
+				sess_items["date_initiated_second"] = sess[4].second
 
-				sess_items["location"] = sess.location
-				sess_items["port"] = sess.port
-				sess_items["increment_size"] = sess.increment_size
-				sess_items["increments"] = sess.increments
+				sess_items["location"] = sess[5]
+				sess_items["port"] = sess[6]
+				sess_items["increment_size"] = sess[7]
+				sess_items["increments"] = sess[8]
 
 				payload["sessions"].append(sess_items)
 
-
-			for page_num in sessions.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=2):
+			for page_num in get_iter_pages(left_edge=2, right_edge=2, left_current=2, right_current=5, pages=num_pages, page=page):
 				if page_num:
 					payload["iter_pages"].append(page_num)
 				else:
 					payload["iter_pages"].append(0)
 
+			# Grab the settings
+			sql = "SELECT * FROM settings WHERE id = " + str(device_id)
+			mycursor.execute(sql)
+			result = mycursor.fetchall()
+			device_settings = result[0]
+
 			# Add the settings to the payload as well
 			settings = {}
-			settings["toggle_pay"] = devi.settings.toggle_pay
-			settings["price"] = devi.settings.price
-			settings["charge_time"] = devi.settings.charge_time
-			settings["time_offset"] = devi.settings.time_offset
-			settings["location"] = devi.settings.location
-			settings["aspect_ratio_width"] = devi.settings.aspect_ratio_width
-			settings["aspect_ratio_height"] = devi.settings.aspect_ratio_height
+			settings["toggle_pay"] = device_settings[1]
+			settings["price"] = device_settings[2]
+			settings["charge_time"] = device_settings[3]
+			settings["time_offset"] = device_settings[4]
+			settings["location"] = device_settings[5]
+			settings["aspect_ratio_width"] = device_settings[6]
+			settings["aspect_ratio_height"] = device_settings[7]
 
 			payload["settings"] = settings
 
@@ -190,47 +240,68 @@ def get_all_device_sessions(id_number, admin_key):
 			resp.status_code = 401
 			return resp
 
-		devi = Device.query.filter_by(id_number=id_number).first()
-		if devi != None:
+		mydb = mysql.connector.connect(
+			host=mysql_host,
+			user=mysql_user,
+			password=mysql_password,
+			database=mysql_database
+		)
+		mycursor = mydb.cursor()
+
+		sql = "SELECT * FROM device WHERE id_number = %s"
+		val = (id_number,)
+		mycursor.execute(sql,val)
+		result = mycursor.fetchall()
+
+		if len(result) > 0:
 			payload["registered"] = True
 
-			sessions = Session.query.filter_by(host=devi)\
-				.order_by(Session.date_initiated.desc())\
-				.all()
+			device_id = result[0][0]
+
+			# Grab the sessions
+			sql = "SELECT * FROM session WHERE host_id = " + str(device_id)
+			mycursor.execute(sql)
+			all_sessions = mycursor.fetchall()
 
 			payload["sessions"] = []
 
-			for sess in sessions:
+			for sess in all_sessions:
 				sess_items = {}
-				sess_items["id"] = sess.id
+				sess_items["id"] = sess[0]
 
-				sess_items["duration"] = sess.duration
-				sess_items["power_used"] = sess.power_used
-				sess_items["amount_paid"] = sess.amount_paid
+				sess_items["duration"] = sess[1]
+				sess_items["power_used"] = sess[2]
+				sess_items["amount_paid"] = sess[3]
 
-				sess_items["date_initiated_year"] = sess.date_initiated.year
-				sess_items["date_initiated_month"] = sess.date_initiated.month
-				sess_items["date_initiated_day"] = sess.date_initiated.day
-				sess_items["date_initiated_hour"] = sess.date_initiated.hour
-				sess_items["date_initiated_minute"] = sess.date_initiated.minute
-				sess_items["date_initiated_second"] = sess.date_initiated.second
+				sess_items["date_initiated_year"] = sess[4].year
+				sess_items["date_initiated_month"] = sess[4].month
+				sess_items["date_initiated_day"] = sess[4].day
+				sess_items["date_initiated_hour"] = sess[4].hour
+				sess_items["date_initiated_minute"] = sess[4].minute
+				sess_items["date_initiated_second"] = sess[4].second
 
-				sess_items["location"] = sess.location
-				sess_items["port"] = sess.port
-				sess_items["increment_size"] = sess.increment_size
-				sess_items["increments"] = sess.increments
+				sess_items["location"] = sess[5]
+				sess_items["port"] = sess[6]
+				sess_items["increment_size"] = sess[7]
+				sess_items["increments"] = sess[8]
 
 				payload["sessions"].append(sess_items)
 
+			# Grab the settings
+			sql = "SELECT * FROM settings WHERE id = " + str(device_id)
+			mycursor.execute(sql)
+			result = mycursor.fetchall()
+			device_settings = result[0]
+
 			# Add the settings to the payload as well
 			settings = {}
-			settings["toggle_pay"] = devi.settings.toggle_pay
-			settings["price"] = devi.settings.price
-			settings["charge_time"] = devi.settings.charge_time
-			settings["time_offset"] = devi.settings.time_offset
-			settings["location"] = devi.settings.location
-			settings["aspect_ratio_width"] = devi.settings.aspect_ratio_width
-			settings["aspect_ratio_height"] = devi.settings.aspect_ratio_height
+			settings["toggle_pay"] = device_settings[1]
+			settings["price"] = device_settings[2]
+			settings["charge_time"] = device_settings[3]
+			settings["time_offset"] = device_settings[4]
+			settings["location"] = device_settings[5]
+			settings["aspect_ratio_width"] = device_settings[6]
+			settings["aspect_ratio_height"] = device_settings[7]
 
 			payload["settings"] = settings
 
@@ -255,6 +326,8 @@ def get_all_device_sessions(id_number, admin_key):
 
 @sessions.route("/site/sessions/<int:id>/<int:page>/<string:admin_key>")
 def get_sessions(id, page, admin_key):
+	items_per_page = 25
+
 	payload = {}
 	if request.method == 'GET':
 		if not userManager.verify_key(admin_key):
@@ -262,53 +335,82 @@ def get_sessions(id, page, admin_key):
 			resp.status_code = 401
 			return resp
 
-		devi = Device.query.filter_by(id=id).first()
-		if devi != None:
-			sessions = Session.query.filter_by(host=devi)\
-				.order_by(Session.date_initiated.desc())\
-				.paginate(page=page, per_page=10)
+		mydb = mysql.connector.connect(
+			host=mysql_host,
+			user=mysql_user,
+			password=mysql_password,
+			database=mysql_database
+		)
+		mycursor = mydb.cursor()
+
+		sql = "SELECT * FROM device WHERE id = %s"
+		val = (id,)
+		mycursor.execute(sql,val)
+		result = mycursor.fetchall()
+
+		if len(result) > 0:
+			device_id = result[0][0]
+
+			# Get the number of rows in sessions
+			sql = "SELECT COUNT(*) FROM session"
+			mycursor.execute(sql)
+			result = mycursor.fetchall()
+			num_of_sessions = result[0][0]
+			num_pages = ceildiv(num_of_sessions, items_per_page)
+
+			# Grab the sessions
+			offset = (page - 1) * items_per_page
+			sql = "SELECT * FROM session WHERE host_id = %s ORDER BY date_initiated LIMIT %s OFFSET %s"
+			val = (device_id, items_per_page, offset)
+			mycursor.execute(sql, val)
+			result = mycursor.fetchall()
 
 			payload["sessions"] = []
 			payload["iter_pages"] = []
 
-			for sess in sessions.items:
+			for sess in result:
 				sess_items = {}
-				sess_items["id"] = sess.id
+				sess_items["id"] = sess[0]
 
-				sess_items["duration"] = sess.duration
-				sess_items["power_used"] = sess.power_used
-				sess_items["amount_paid"] = sess.amount_paid
+				sess_items["duration"] = sess[1]
+				sess_items["power_used"] = sess[2]
+				sess_items["amount_paid"] = sess[3]
 
-				sess_items["date_initiated_year"] = sess.date_initiated.year
-				sess_items["date_initiated_month"] = sess.date_initiated.month
-				sess_items["date_initiated_day"] = sess.date_initiated.day
-				sess_items["date_initiated_hour"] = sess.date_initiated.hour
-				sess_items["date_initiated_minute"] = sess.date_initiated.minute
-				sess_items["date_initiated_second"] = sess.date_initiated.second
+				sess_items["date_initiated_year"] = sess[4].year
+				sess_items["date_initiated_month"] = sess[4].month
+				sess_items["date_initiated_day"] = sess[4].day
+				sess_items["date_initiated_hour"] = sess[4].hour
+				sess_items["date_initiated_minute"] = sess[4].minute
+				sess_items["date_initiated_second"] = sess[4].second
 
-				sess_items["location"] = sess.location
-				sess_items["port"] = sess.port
-				sess_items["increment_size"] = sess.increment_size
-				sess_items["increments"] = sess.increments
+				sess_items["location"] = sess[5]
+				sess_items["port"] = sess[6]
+				sess_items["increment_size"] = sess[7]
+				sess_items["increments"] = sess[8]
 
 				payload["sessions"].append(sess_items)
 
-
-			for page_num in sessions.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=2):
+			for page_num in get_iter_pages(left_edge=2, right_edge=2, left_current=2, right_current=5, pages=num_pages, page=page):
 				if page_num:
 					payload["iter_pages"].append(page_num)
 				else:
 					payload["iter_pages"].append(0)
 
+			# Grab the settings
+			sql = "SELECT * FROM settings WHERE id = " + str(device_id)
+			mycursor.execute(sql)
+			result = mycursor.fetchall()
+			device_settings = result[0]
+
 			# Add the settings to the payload as well
 			settings = {}
-			settings["toggle_pay"] = devi.settings.toggle_pay
-			settings["price"] = devi.settings.price
-			settings["charge_time"] = devi.settings.charge_time
-			settings["time_offset"] = devi.settings.time_offset
-			settings["location"] = devi.settings.location
-			settings["aspect_ratio_width"] = devi.settings.aspect_ratio_width
-			settings["aspect_ratio_height"] = devi.settings.aspect_ratio_height
+			settings["toggle_pay"] = device_settings[1]
+			settings["price"] = device_settings[2]
+			settings["charge_time"] = device_settings[3]
+			settings["time_offset"] = device_settings[4]
+			settings["location"] = device_settings[5]
+			settings["aspect_ratio_width"] = device_settings[6]
+			settings["aspect_ratio_height"] = device_settings[7]
 
 			payload["settings"] = settings
 
@@ -333,45 +435,66 @@ def all_sessions(id, admin_key):
 			resp.status_code = 401
 			return resp
 
-		devi = Device.query.filter_by(id=id).first()
-		if devi != None:
-			sessions = Session.query.filter_by(host=devi)\
-				.order_by(Session.date_initiated.desc())\
-				.all()
+		mydb = mysql.connector.connect(
+			host=mysql_host,
+			user=mysql_user,
+			password=mysql_password,
+			database=mysql_database
+		)
+		mycursor = mydb.cursor()
+
+		sql = "SELECT * FROM device WHERE id = %s"
+		val = (id,)
+		mycursor.execute(sql,val)
+		result = mycursor.fetchall()
+
+		if len(result) > 0:
+			device_id = result[0][0]
+
+			# Grab the sessions
+			sql = "SELECT * FROM session WHERE host_id = " + str(device_id)
+			mycursor.execute(sql)
+			all_sessions = mycursor.fetchall()
 
 			payload["sessions"] = []
 
-			for sess in sessions:
+			for sess in all_sessions:
 				sess_items = {}
-				sess_items["id"] = sess.id
+				sess_items["id"] = sess[0]
 
-				sess_items["duration"] = sess.duration
-				sess_items["power_used"] = sess.power_used
-				sess_items["amount_paid"] = sess.amount_paid
+				sess_items["duration"] = sess[1]
+				sess_items["power_used"] = sess[2]
+				sess_items["amount_paid"] = sess[3]
 
-				sess_items["date_initiated_year"] = sess.date_initiated.year
-				sess_items["date_initiated_month"] = sess.date_initiated.month
-				sess_items["date_initiated_day"] = sess.date_initiated.day
-				sess_items["date_initiated_hour"] = sess.date_initiated.hour
-				sess_items["date_initiated_minute"] = sess.date_initiated.minute
-				sess_items["date_initiated_second"] = sess.date_initiated.second
+				sess_items["date_initiated_year"] = sess[4].year
+				sess_items["date_initiated_month"] = sess[4].month
+				sess_items["date_initiated_day"] = sess[4].day
+				sess_items["date_initiated_hour"] = sess[4].hour
+				sess_items["date_initiated_minute"] = sess[4].minute
+				sess_items["date_initiated_second"] = sess[4].second
 
-				sess_items["location"] = sess.location
-				sess_items["port"] = sess.port
-				sess_items["increment_size"] = sess.increment_size
-				sess_items["increments"] = sess.increments
+				sess_items["location"] = sess[5]
+				sess_items["port"] = sess[6]
+				sess_items["increment_size"] = sess[7]
+				sess_items["increments"] = sess[8]
 
 				payload["sessions"].append(sess_items)
 
+			# Grab the settings
+			sql = "SELECT * FROM settings WHERE id = " + str(device_id)
+			mycursor.execute(sql)
+			result = mycursor.fetchall()
+			device_settings = result[0]
+
 			# Add the settings to the payload as well
 			settings = {}
-			settings["toggle_pay"] = devi.settings.toggle_pay
-			settings["price"] = devi.settings.price
-			settings["charge_time"] = devi.settings.charge_time
-			settings["time_offset"] = devi.settings.time_offset
-			settings["location"] = devi.settings.location
-			settings["aspect_ratio_width"] = devi.settings.aspect_ratio_width
-			settings["aspect_ratio_height"] = devi.settings.aspect_ratio_height
+			settings["toggle_pay"] = device_settings[1]
+			settings["price"] = device_settings[2]
+			settings["charge_time"] = device_settings[3]
+			settings["time_offset"] = device_settings[4]
+			settings["location"] = device_settings[5]
+			settings["aspect_ratio_width"] = device_settings[6]
+			settings["aspect_ratio_height"] = device_settings[7]
 
 			payload["settings"] = settings
 
