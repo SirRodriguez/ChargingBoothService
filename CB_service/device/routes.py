@@ -1,6 +1,5 @@
 from flask import Blueprint, request, jsonify, current_app
 from CB_service import db, userManager, mysql_host, mysql_user, mysql_password, mysql_database
-from CB_service.models import Device, Session
 import os
 from os import listdir
 from os.path import isfile, join
@@ -36,7 +35,6 @@ def all_devices(admin_key):
 		list_location = []
 		count = 0
 		for devi in all_devices:
-			# list_id.append(devi.id)
 			list_id.append(devi[0])
 
 			# Grab the device settings

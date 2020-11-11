@@ -1,7 +1,6 @@
 from flask import Blueprint, request, jsonify
 from jsonschema import validate
 from CB_service import db, userManager, mysql_host, mysql_user, mysql_password, mysql_database
-from CB_service.models import Device, Settings
 import secrets
 import mysql.connector
 

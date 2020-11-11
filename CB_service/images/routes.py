@@ -1,6 +1,5 @@
 from flask import Blueprint, request, jsonify, current_app, send_from_directory
 from CB_service import db, userManager, mysql_host, mysql_user, mysql_password, mysql_database
-from CB_service.models import Device
 from CB_service.images.utils import resize_image
 import os
 from os import listdir
