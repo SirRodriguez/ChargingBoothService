@@ -123,7 +123,6 @@ def add_session(id_number):
 		resp.status_code = 405
 		return resp
 
-# Could use more testing
 @sessions.route("/device/sessions/<string:id_number>/<int:page>/<string:admin_key>")
 def get_deivce_sessions(id_number, page, admin_key):
 	items_per_page = 25
@@ -162,7 +161,7 @@ def get_deivce_sessions(id_number, page, admin_key):
 
 			# Grab the sessions
 			offset = (page - 1) * items_per_page
-			sql = "SELECT * FROM session WHERE host_id = %s ORDER BY date_initiated LIMIT %s OFFSET %s"
+			sql = "SELECT * FROM session WHERE host_id = %s ORDER BY date_initiated DESC LIMIT %s OFFSET %s"
 			val = (device_id, items_per_page, offset)
 			mycursor.execute(sql, val)
 			result = mycursor.fetchall()
@@ -359,7 +358,7 @@ def get_sessions(id, page, admin_key):
 
 			# Grab the sessions
 			offset = (page - 1) * items_per_page
-			sql = "SELECT * FROM session WHERE host_id = %s ORDER BY date_initiated LIMIT %s OFFSET %s"
+			sql = "SELECT * FROM session WHERE host_id = %s ORDER BY date_initiated DESC LIMIT %s OFFSET %s"
 			val = (device_id, items_per_page, offset)
 			mycursor.execute(sql, val)
 			result = mycursor.fetchall()
