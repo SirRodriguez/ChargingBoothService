@@ -1,4 +1,6 @@
 from flask import Flask
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 from flask_sqlalchemy import SQLAlchemy
 from flask_bcrypt import Bcrypt
 from flask_mail import Mail
@@ -7,6 +9,11 @@ from CB_service.config import Config
 db = SQLAlchemy()
 bcrypt = Bcrypt()
 mail = Mail()
+
+limiter = Limiter(
+	key_func=get_remote_address,
+	default_limits=["10/minute"] # Needs perfecting
+)
 
 mysql_host = 'localhost'
 mysql_user = 'root'
@@ -25,6 +32,8 @@ def create_app(config_class=Config):
 	db.init_app(app)
 	bcrypt.init_app(app)
 	mail.init_app(app)
+
+	limiter.init_app(app)
 
 	from CB_service.main.routes import main
 	from CB_service.admin_user.routes import admin_user
