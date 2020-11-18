@@ -1,9 +1,10 @@
 from flask import Blueprint, request, jsonify
 from jsonschema import validate
-from CB_service import db, userManager, mysql_host, mysql_user, mysql_password, mysql_database
+from CB_service import db, userManager
 from CB_service.sessions.utils import ceildiv, get_iter_pages
 import datetime
 import mysql.connector
+import os
 
 sessions = Blueprint('sessions', __name__)
 
@@ -70,10 +71,10 @@ def add_session(id_number):
 			return resp
 
 		mydb = mysql.connector.connect(
-			host=mysql_host,
-			user=mysql_user,
-			password=mysql_password,
-			database=mysql_database
+			host=os.environ.get('MYSQL_HOST'),
+			user=os.environ.get('MYSQL_USER'),
+			password=os.environ.get('MYSQL_PASSWORD'),
+			database=os.environ.get('MYSQL_DATABASE')
 		)
 		mycursor = mydb.cursor()
 
@@ -135,10 +136,10 @@ def get_deivce_sessions(id_number, page, admin_key):
 			return resp
 
 		mydb = mysql.connector.connect(
-			host=mysql_host,
-			user=mysql_user,
-			password=mysql_password,
-			database=mysql_database
+			host=os.environ.get('MYSQL_HOST'),
+			user=os.environ.get('MYSQL_USER'),
+			password=os.environ.get('MYSQL_PASSWORD'),
+			database=os.environ.get('MYSQL_DATABASE')
 		)
 		mycursor = mydb.cursor()
 
@@ -239,10 +240,10 @@ def get_all_device_sessions(id_number, admin_key):
 			return resp
 
 		mydb = mysql.connector.connect(
-			host=mysql_host,
-			user=mysql_user,
-			password=mysql_password,
-			database=mysql_database
+			host=os.environ.get('MYSQL_HOST'),
+			user=os.environ.get('MYSQL_USER'),
+			password=os.environ.get('MYSQL_PASSWORD'),
+			database=os.environ.get('MYSQL_DATABASE')
 		)
 		mycursor = mydb.cursor()
 
@@ -334,10 +335,10 @@ def get_sessions(id, page, admin_key):
 			return resp
 
 		mydb = mysql.connector.connect(
-			host=mysql_host,
-			user=mysql_user,
-			password=mysql_password,
-			database=mysql_database
+			host=os.environ.get('MYSQL_HOST'),
+			user=os.environ.get('MYSQL_USER'),
+			password=os.environ.get('MYSQL_PASSWORD'),
+			database=os.environ.get('MYSQL_DATABASE')
 		)
 		mycursor = mydb.cursor()
 
@@ -434,10 +435,10 @@ def all_sessions(id, admin_key):
 			return resp
 
 		mydb = mysql.connector.connect(
-			host=mysql_host,
-			user=mysql_user,
-			password=mysql_password,
-			database=mysql_database
+			host=os.environ.get('MYSQL_HOST'),
+			user=os.environ.get('MYSQL_USER'),
+			password=os.environ.get('MYSQL_PASSWORD'),
+			database=os.environ.get('MYSQL_DATABASE')
 		)
 		mycursor = mydb.cursor()
 

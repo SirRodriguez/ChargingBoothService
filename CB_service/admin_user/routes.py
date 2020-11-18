@@ -1,10 +1,11 @@
 from flask import Blueprint, request, jsonify, render_template
 from jsonschema import validate
-from CB_service import userManager, db, bcrypt, resetLimiter, mysql_host, mysql_user, mysql_password, mysql_database
+from CB_service import userManager, db, bcrypt, resetLimiter
 from CB_service.models import User
 from CB_service.admin_user.forms import ResetPasswordForm
 from CB_service.admin_user.utils import send_reset_email
 import mysql.connector
+import os
 
 admin_user = Blueprint('admin_user', __name__)
 
@@ -66,10 +67,10 @@ def account_info(admin_key):
 			return resp
 
 		mydb = mysql.connector.connect(
-			host=mysql_host,
-			user=mysql_user,
-			password=mysql_password,
-			database=mysql_database
+			host=os.environ.get('MYSQL_HOST'),
+			user=os.environ.get('MYSQL_USER'),
+			password=os.environ.get('MYSQL_PASSWORD'),
+			database=os.environ.get('MYSQL_DATABASE')
 		)
 
 		mycursor = mydb.cursor()
@@ -120,10 +121,10 @@ def update_account(admin_key):
 			return resp
 
 		mydb = mysql.connector.connect(
-			host=mysql_host,
-			user=mysql_user,
-			password=mysql_password,
-			database=mysql_database
+			host=os.environ.get('MYSQL_HOST'),
+			user=os.environ.get('MYSQL_USER'),
+			password=os.environ.get('MYSQL_PASSWORD'),
+			database=os.environ.get('MYSQL_DATABASE')
 		)
 		mycursor = mydb.cursor()
 		sql = "UPDATE user SET username = %s, email = %s WHERE id = 1"
@@ -170,10 +171,10 @@ def update_password(admin_key):
 			return resp
 
 		mydb = mysql.connector.connect(
-			host=mysql_host,
-			user=mysql_user,
-			password=mysql_password,
-			database=mysql_database
+			host=os.environ.get('MYSQL_HOST'),
+			user=os.environ.get('MYSQL_USER'),
+			password=os.environ.get('MYSQL_PASSWORD'),
+			database=os.environ.get('MYSQL_DATABASE')
 		)
 		mycursor = mydb.cursor()
 		sql = "UPDATE user SET password = %s WHERE id = %s"
@@ -212,10 +213,10 @@ def reset_password():
 	if not resetLimiter.reached_limit():
 		resetLimiter.add_count()
 		mydb = mysql.connector.connect(
-			host=mysql_host,
-			user=mysql_user,
-			password=mysql_password,
-			database=mysql_database
+			host=os.environ.get('MYSQL_HOST'),
+			user=os.environ.get('MYSQL_USER'),
+			password=os.environ.get('MYSQL_PASSWORD'),
+			database=os.environ.get('MYSQL_DATABASE')
 		)
 		mycursor = mydb.cursor()
 		sql = "SELECT * FROM user"
@@ -237,10 +238,10 @@ def reset_token(token):
 	form = ResetPasswordForm()
 	if form.validate_on_submit():
 		mydb = mysql.connector.connect(
-			host=mysql_host,
-			user=mysql_user,
-			password=mysql_password,
-			database=mysql_database
+			host=os.environ.get('MYSQL_HOST'),
+			user=os.environ.get('MYSQL_USER'),
+			password=os.environ.get('MYSQL_PASSWORD'),
+			database=os.environ.get('MYSQL_DATABASE')
 		)
 		mycursor = mydb.cursor()
 		sql = "UPDATE user SET password = %s WHERE id = %s"

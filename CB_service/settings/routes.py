@@ -1,8 +1,9 @@
 from flask import Blueprint, request, jsonify
 from jsonschema import validate
-from CB_service import db, userManager, mysql_host, mysql_user, mysql_password, mysql_database
+from CB_service import db, userManager
 from CB_service.settings.utils import resize_all_images
 import mysql.connector
+import os
 
 settings = Blueprint('settings', __name__)
 
@@ -17,10 +18,10 @@ def get_device_settings(id_number):
 	payload = {}
 	if request.method == 'GET':
 		mydb = mysql.connector.connect(
-			host=mysql_host,
-			user=mysql_user,
-			password=mysql_password,
-			database=mysql_database
+			host=os.environ.get('MYSQL_HOST'),
+			user=os.environ.get('MYSQL_USER'),
+			password=os.environ.get('MYSQL_PASSWORD'),
+			database=os.environ.get('MYSQL_DATABASE')
 		)
 		mycursor = mydb.cursor()
 
@@ -107,10 +108,10 @@ def update_device_settings(id_number, admin_key):
 			return resp
 
 		mydb = mysql.connector.connect(
-			host=mysql_host,
-			user=mysql_user,
-			password=mysql_password,
-			database=mysql_database
+			host=os.environ.get('MYSQL_HOST'),
+			user=os.environ.get('MYSQL_USER'),
+			password=os.environ.get('MYSQL_PASSWORD'),
+			database=os.environ.get('MYSQL_DATABASE')
 		)
 		mycursor = mydb.cursor()
 
@@ -184,10 +185,10 @@ def device_settings(id, admin_key):
 			return resp
 
 		mydb = mysql.connector.connect(
-			host=mysql_host,
-			user=mysql_user,
-			password=mysql_password,
-			database=mysql_database
+			host=os.environ.get('MYSQL_HOST'),
+			user=os.environ.get('MYSQL_USER'),
+			password=os.environ.get('MYSQL_PASSWORD'),
+			database=os.environ.get('MYSQL_DATABASE')
 		)
 		mycursor = mydb.cursor()
 
@@ -276,10 +277,10 @@ def update_settings(id, admin_key):
 			return resp
 
 		mydb = mysql.connector.connect(
-			host=mysql_host,
-			user=mysql_user,
-			password=mysql_password,
-			database=mysql_database
+			host=os.environ.get('MYSQL_HOST'),
+			user=os.environ.get('MYSQL_USER'),
+			password=os.environ.get('MYSQL_PASSWORD'),
+			database=os.environ.get('MYSQL_DATABASE')
 		)
 		mycursor = mydb.cursor()
 

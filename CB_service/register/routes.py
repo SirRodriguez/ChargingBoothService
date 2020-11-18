@@ -1,8 +1,9 @@
 from flask import Blueprint, request, jsonify
 from jsonschema import validate
-from CB_service import db, userManager, mysql_host, mysql_user, mysql_password, mysql_database
+from CB_service import db, userManager
 import secrets
 import mysql.connector
+import os
 
 register = Blueprint('register', __name__)
 
@@ -39,10 +40,10 @@ def register_device():
 			return resp
 
 		mydb = mysql.connector.connect(
-			host=mysql_host,
-			user=mysql_user,
-			password=mysql_password,
-			database=mysql_database
+			host=os.environ.get('MYSQL_HOST'),
+			user=os.environ.get('MYSQL_USER'),
+			password=os.environ.get('MYSQL_PASSWORD'),
+			database=os.environ.get('MYSQL_DATABASE')
 		)
 		mycursor = mydb.cursor()
 
@@ -89,10 +90,10 @@ def is_registered(id_number):
 	payload = {}
 	if request.method == 'GET':
 		mydb = mysql.connector.connect(
-			host=mysql_host,
-			user=mysql_user,
-			password=mysql_password,
-			database=mysql_database
+			host=os.environ.get('MYSQL_HOST'),
+			user=os.environ.get('MYSQL_USER'),
+			password=os.environ.get('MYSQL_PASSWORD'),
+			database=os.environ.get('MYSQL_DATABASE')
 		)
 		mycursor = mydb.cursor()
 		sql = "SELECT * FROM device WHERE id_number = %s"

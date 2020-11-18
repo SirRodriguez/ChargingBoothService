@@ -1,11 +1,12 @@
 from flask import current_app
 from datetime import datetime, timedelta
 from itsdangerous import TimedJSONWebSignatureSerializer as Serializer
-from CB_service import db, bcrypt, mysql_host, mysql_user, mysql_password, mysql_database
+from CB_service import db, bcrypt
 import secrets
 import threading
 import time
 import mysql.connector
+import os
 
 ##############
 ## Database ##
@@ -90,10 +91,10 @@ class UserManager():
 
 	def only_verify_user(self, username, password):
 		mydb = mysql.connector.connect(
-			host=mysql_host,
-			user=mysql_user,
-			password=mysql_password,
-			database=mysql_database
+			host=os.environ.get('MYSQL_HOST'),
+			user=os.environ.get('MYSQL_USER'),
+			password=os.environ.get('MYSQL_PASSWORD'),
+			database=os.environ.get('MYSQL_DATABASE')
 		)
 		mycursor = mydb.cursor()
 		sql = "SELECT * FROM user"
@@ -103,15 +104,12 @@ class UserManager():
 
 		return user[1] == username and bcrypt.check_password_hash(user[3], password)
 
-		# user = User.query.filter_by(username=username).first()
-		# return user and bcrypt.check_password_hash(user.password, password)
-
 	def verify_user(self, username, password):
 		mydb = mysql.connector.connect(
-			host=mysql_host,
-			user=mysql_user,
-			password=mysql_password,
-			database=mysql_database
+			host=os.environ.get('MYSQL_HOST'),
+			user=os.environ.get('MYSQL_USER'),
+			password=os.environ.get('MYSQL_PASSWORD'),
+			database=os.environ.get('MYSQL_DATABASE')
 		)
 		mycursor = mydb.cursor()
 		sql = "SELECT * FROM user"
@@ -122,11 +120,6 @@ class UserManager():
 		if user[1] == username and bcrypt.check_password_hash(user[3], password):
 			return self.create_admin_key()
 		return None
-
-		# user = User.query.filter_by(username=username).first()
-		# if user and bcrypt.check_password_hash(user.password, password):
-		# 	return self.create_admin_key()
-		# return None
 
 	def verify_key(self, key):
 		if key == "":
