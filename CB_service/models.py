@@ -105,6 +105,10 @@ class UserManager():
 		return user[1] == username and bcrypt.check_password_hash(user[3], password)
 
 	def verify_user(self, username, password):
+		print("host: ", os.environ.get('MYSQL_HOST'))
+		print("user: ", os.environ.get('MYSQL_USER'))
+		print("pass: ", os.environ.get('MYSQL_PASSWORD'))
+		print("db: ", os.environ.get('MYSQL_DATABASE'))
 		mydb = mysql.connector.connect(
 			host=os.environ.get('MYSQL_HOST'),
 			user=os.environ.get('MYSQL_USER'),
