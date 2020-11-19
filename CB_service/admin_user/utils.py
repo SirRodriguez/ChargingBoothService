@@ -7,7 +7,7 @@ def send_reset_email(user):
 	local_user = User.query.first()
 	token = local_user.get_reset_token()
 	# msg = Message('Password Reset Request', sender='noreply@demo.com', recipients=[user.email])
-	msg = Message('Password Reset Request', sender='noreply@demo.com', recipients=[user[2]])
+	msg = Message('Password Reset Request', sender='testflaskmailserver@gmail.com', recipients=[user[2]])
 
 
 	msg.body = f'''To reset your password, visit the following link:
