@@ -15,12 +15,6 @@ limiter = Limiter(
 	default_limits=["10/minute"] # Needs perfecting
 )
 
-# os.environ.get('MYSQL_HOST') = 'localhost'
-# os.environ.get('MYSQL_USER') = 'root'
-# os.environ.get('MYSQL_PASSWORD') = 'CRodPass@123'
-# os.environ.get('MYSQL_DATABASE') = 'charging_booth_database'
-
-
 from CB_service.models import UserManager, ResetLimiter
 userManager = UserManager()
 resetLimiter = ResetLimiter()
