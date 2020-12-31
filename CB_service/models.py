@@ -87,9 +87,13 @@ class UserManager():
 		self.thread_pool = list()
 
 	def reset_admin_key(self):
+		print("-----reset admin key-----")
+		print("-----admin_key-----", self.admin_key)
 		self.admin_key = ""
 
 	def only_verify_user(self, username, password):
+		print("-----only verify user-----")
+		print("-----admin_key-----", self.admin_key)
 		mydb = mysql.connector.connect(
 			host=os.environ.get('MYSQL_HOST'),
 			user=os.environ.get('MYSQL_USER'),
@@ -105,6 +109,8 @@ class UserManager():
 		return user[1] == username and bcrypt.check_password_hash(user[3], password)
 
 	def verify_user(self, username, password):
+		print("-----verify user-----")
+		print("-----admin_key-----", self.admin_key)
 		mydb = mysql.connector.connect(
 			host=os.environ.get('MYSQL_HOST'),
 			user=os.environ.get('MYSQL_USER'),
@@ -122,6 +128,8 @@ class UserManager():
 		return None
 
 	def verify_key(self, key):
+		print("-----verify key-----")
+		print("-----admin_key-----", self.admin_key)
 		if key == "":
 			return False
 		if self.admin_key == "":
@@ -129,6 +137,8 @@ class UserManager():
 		return self.admin_key == key
 
 	def create_admin_key(self):
+		print("-----create admin key-----")
+		print("-----admin_key-----", self.admin_key)
 		self.admin_key = secrets.token_hex(50)
 		self.last_used = datetime.utcnow()
 
@@ -147,6 +157,7 @@ class UserManager():
 		while running:
 			time_remain = timedelta(minutes=30) - self.elapsed_time()
 			if time_remain < timedelta(seconds=0): # time has run out
+				print("-----time ran out-----")
 				self.admin_key = ""
 				running = False
 
