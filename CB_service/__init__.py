@@ -12,8 +12,14 @@ mail = Mail()
 
 def check_device_id_num():
 	print("-----custom key function-----")
-	print(request.view_args['id_number'])
-	return "test"
+	try:
+		print(request.view_args['id_number'])
+		if request.view_args['id_number'] != None:
+			return request.view_args['id_number']
+		else:
+			return get_remote_address()
+	except:
+		return get_remote_address()
 
 limiter = Limiter(
 	key_func=check_device_id_num,
