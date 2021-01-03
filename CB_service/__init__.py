@@ -11,9 +11,7 @@ bcrypt = Bcrypt()
 mail = Mail()
 
 def check_device_id_num():
-	print("-----custom key function-----")
 	try:
-		print(request.view_args['id_number'])
 		if request.view_args['id_number'] != None:
 			return request.view_args['id_number']
 		else:
