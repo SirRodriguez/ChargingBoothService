@@ -21,7 +21,7 @@ def check_device_id_num():
 
 limiter = Limiter(
 	key_func=check_device_id_num,
-	default_limits=["10/minute"] # Needs perfecting
+	default_limits=["20/minute"] # Needs perfecting
 )
 
 from CB_service.models import UserManager, ResetLimiter
