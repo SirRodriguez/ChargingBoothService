@@ -10,12 +10,16 @@ db = SQLAlchemy()
 bcrypt = Bcrypt()
 mail = Mail()
 
-def my_key_func():
-	print("custom key function")
-	return "test"
+def check_device_id_num():
+	print("-----custom key function-----")
+	print("id_num: ", request.view_args['id_number'])
+	if request.view_args['id_number'] != None:
+		return request
+	else:
+		return get_remote_address()
 
 limiter = Limiter(
-	key_func=my_key_func,
+	key_func=check_device_id_num,
 	default_limits=["10/minute"] # Needs perfecting
 )
 
