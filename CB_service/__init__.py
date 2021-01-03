@@ -10,8 +10,12 @@ db = SQLAlchemy()
 bcrypt = Bcrypt()
 mail = Mail()
 
+def my_key_func():
+	print("custom key function")
+	return "test"
+
 limiter = Limiter(
-	key_func=get_remote_address,
+	key_func=my_key_func,
 	default_limits=["10/minute"] # Needs perfecting
 )
 
